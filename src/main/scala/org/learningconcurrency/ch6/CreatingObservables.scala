@@ -1,5 +1,5 @@
 package org.learningconcurrency
-package reactive
+package ch6
 
 
 
@@ -7,12 +7,10 @@ import rx.lang.scala._
 
 
 
-object CreatingObservables {
+object CreatingObservables extends App {
 
-  def main(args: Array[String]) {
     val o = Observable.items(1, 2, 3)
     o.subscribe(n => println(n))
-  }
 
 }
 
