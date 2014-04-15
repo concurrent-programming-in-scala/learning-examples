@@ -7,7 +7,7 @@ package ch2
 
 
 object UnsafeUid extends App {
-  import annotation.tailrec
+  import scala.annotation.tailrec
   private val unsafe = scala.concurrent.util.Unsafe.instance
   private val uidCountOffset = unsafe.objectFieldOffset(UnsafeUid.getClass.getDeclaredField("uidCount"))
   @volatile var uidCount = 0L
@@ -21,7 +21,7 @@ object UnsafeUid extends App {
 
   def getUniqueIds(n: Int): Unit = {
     val uids = for (i <- 0 until n) yield getUniqueId()
-    println(s"Generated uids: $uids")
+    log(s"Generated uids: $uids")
   }
 
   val t = thread {

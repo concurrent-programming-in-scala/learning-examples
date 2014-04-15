@@ -25,14 +25,14 @@ object ThreadsSleep extends App {
 
   val t = thread {
     Thread.sleep(1000)
-    println("New thread running.")
+    log("New thread running.")
     Thread.sleep(1000)
-    println("Still running.")
+    log("Still running.")
     Thread.sleep(1000)
-    println("Completed.")
+    log("Completed.")
   }
   t.join()
-  println("New thread joined.")
+  log("New thread joined.")
 
 }
 
@@ -40,15 +40,15 @@ object ThreadsSleep extends App {
 object ThreadsNondeterminism extends App {
 
   val t = thread {
-    println("New thread running.")
+    log("New thread running.")
   }
-  println("...")
-  println("...")
-  println("...")
-  println("...")
-  println("...")
+  log("...")
+  log("...")
+  log("...")
+  log("...")
+  log("...")
   t.join()
-  println("New thread joined.")
+  log("New thread joined.")
 
 }
 
@@ -65,7 +65,7 @@ object ThreadsUnprotectedUid extends App {
 
   def getUniqueIds(n: Int): Unit = {
     val uids = for (i <- 0 until n) yield getUniqueId()
-    println(s"Generated uids: $uids")
+    log(s"Generated uids: $uids")
   }
 
   val t = thread {

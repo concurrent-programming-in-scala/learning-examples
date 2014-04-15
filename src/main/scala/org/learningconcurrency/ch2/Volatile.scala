@@ -7,20 +7,43 @@ package ch2
 
 
 object VolatileScan extends App {
-  val document: Seq[String] = for (i <- 1 to 5) yield "lorem ipsum " * (100 - 20 * i) + "Leslie"
-  val query = "Leslie"
+  val document: Seq[String] = for (i <- 1 to 5) yield "lorem ipsum " * (1000 - 200 * i) + "Leslie"
   var results = Array.fill(document.length)(-1)
   @volatile var found = false
   val threads = for (i <- 0 until document.length) yield thread {
-    def scan(n: Int, words: Seq[String]): Unit =
+    def scan(n: Int, words: Seq[String], query: String): Unit =
       if (words(n) == query) {
         results(i) = n
         found = true
-      } else if (!found) scan(n + 1, words)
-    scan(0, document(i).split(" "))
+      } else if (!found) scan(n + 1, words, query)
+    scan(0, document(i).split(" "), "Leslie")
   }
   for (t <- threads) t.join()
-  println(s"Found $query: ${results.find(_ != -1)}")
+  log(s"Found: ${results.find(_ != -1)}")
+}
+
+
+object VolatileUnprotectedUid extends App {
+
+  @volatile var uidCount = 0L
+
+  def getUniqueId() = {
+    val freshUid = uidCount + 1
+    uidCount = freshUid
+    freshUid
+  }
+
+  def getUniqueIds(n: Int): Unit = {
+    val uids = for (i <- 0 until n) yield getUniqueId()
+    log(s"Generated uids: $uids")
+  }
+
+  val t = thread {
+    getUniqueIds(5)
+  }
+  getUniqueIds(5)
+  t.join()
+
 }
 
 
