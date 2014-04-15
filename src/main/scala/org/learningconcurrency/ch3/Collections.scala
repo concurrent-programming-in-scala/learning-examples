@@ -43,6 +43,48 @@ object CollectionsSynchronized extends App {
 }
 
 
+object MiscSyncVars extends App {
+  import scala.concurrent._
+  val sv = new SyncVar[String]
+
+  execute(runnable {
+    Thread.sleep(500)
+    log("sending a message")
+    sv.put("This is secret.")
+  })
+
+  log(s"get  = ${sv.get}")
+  log(s"take = ${sv.take()}")
+
+  execute(runnable {
+    Thread.sleep(500)
+    log("sending another message")
+    sv.put("Secrets should not be logged!")
+  })
+
+  log(s"take = ${sv.take()}")
+  log(s"take = ${sv.take(timeout = 1000)}")
+}
+
+
+object MiscDynamicVars extends App {
+  import scala.util.DynamicVariable
+
+  val dynlog = new DynamicVariable[String => Unit](log)
+  def secretLog(msg: String) = println(s"(unknown thread): $msg")
+
+  execute(runnable {
+    dynlog.value("Starting asynchronous execution.")
+    dynlog.withValue(secretLog) {
+      dynlog.value("Nobody knows who I am.")
+    }
+    dynlog.value("Ending asynchronous execution.")
+  })
+
+  dynlog.value("is calling the log method!")
+}
+
+
 object CollectionsConcurrentMap extends App {
   import java.util.concurrent.ConcurrentHashMap
   import scala.collection._
@@ -107,35 +149,39 @@ object CollectionsConcurrentMapBulk extends App {
   val names = new ConcurrentHashMap[String, String]().asScala
   names("John") = "Doe"
   names("Jane") = "Doe"
-  names("Jimmy") = "Wales"
+  names("Jack") = "Daniels"
 
   execute(runnable {
-
+    for (n <- 0 until 10) names(s"John $n") = ", of Scotland"
   })
 
   execute(runnable {
-    //for (n <- names) 
+    for (n <- names) log(s"name: $n")
   })
-
-}
-
-
-object CollectionsConcurrentSet extends App {
-
-}
-
-
-object CollectionsConcurrentQueue extends App {
-
-}
-
-
-object CollectionsConcurrentTraversal extends App {
 
 }
 
 
 object CollectionsTrieMap extends App {
+  import scala.collection._
+
+  val names = new concurrent.TrieMap[String, String]
+  names("Janice") = "Joplin"
+  names("Jackie") = "Chan"
+  names("Jill") = "of the Jungle"
+
+  execute(runnable {
+    for (n <- 0 until 100) names(s"John $n") = s", $n. Duke of Scotland"
+  })
+
+  execute(runnable {
+    log("snapshot time!")
+    for (n <- names) log(s"Found name: $n")
+  })
 
 }
+
+
+
+
 
