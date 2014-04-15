@@ -94,7 +94,7 @@ object CollectionsConcurrentMap extends App {
   val emails = new ConcurrentHashMap[String, List[String]]().asScala
 
   execute(runnable {
-    emails("James Gosling") = List("james@lovejava.com")
+    emails("James Gosling") = List("james@javalove.com")
     log(s"emails = $emails")
   })
 
