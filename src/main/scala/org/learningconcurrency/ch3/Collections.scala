@@ -66,11 +66,24 @@ object CollectionsConcurrentMap extends App {
     log(s"emails = $emails")
   })
 
+}
+
+
+object CollectionsConcurrentMapIncremental extends App {
+  import java.util.concurrent.ConcurrentHashMap
+  import scala.collection._
+  import scala.collection.convert.decorateAsScala._
+  import scala.annotation.tailrec
+
+  val emails = new ConcurrentHashMap[String, List[String]]().asScala
+
   @tailrec def addEmail(name: String, address: String) {
-    val existing = emails.getOrElse(name, Nil)
-    val updated = address :: existing
-    println(existing, updated)
-    if (!emails.replace(name, existing, updated)) addEmail(name, address)
+    emails.get(name) match {
+      case Some(existing) =>
+        if (!emails.replace(name, existing, address :: existing)) addEmail(name, address)
+      case None =>
+        if (emails.putIfAbsent(name, address :: Nil) != None) addEmail(name, address)
+    }
   }
 
   execute(runnable {
@@ -91,10 +104,17 @@ object CollectionsConcurrentMapBulk extends App {
   import scala.collection.convert.decorateAsScala._
   import java.util.concurrent.ConcurrentHashMap
 
-  val emails = new ConcurrentHashMap[String, List[String]]().asScala
+  val names = new ConcurrentHashMap[String, String]().asScala
+  names("John") = "Doe"
+  names("Jane") = "Doe"
+  names("Jimmy") = "Wales"
 
   execute(runnable {
-    
+
+  })
+
+  execute(runnable {
+    //for (n <- names) 
   })
 
 }
