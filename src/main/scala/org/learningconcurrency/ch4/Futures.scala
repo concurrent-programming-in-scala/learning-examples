@@ -138,6 +138,13 @@ object FuturesRecover extends App {
   import ExecutionContext.Implicits.global
   import scala.io.Source
 
+  val netiquette = Future { Source.fromURL("http://www.ietf.org/rfc/rfc1855.doc").mkString } recover {
+    case _ => "Dear boss, thank you for your e-mail. You might want to turn that CAPS LOCK off."
+  }
+
+  netiquette onSuccess {
+    case contents => log(contents)
+  }
 
 }
 
