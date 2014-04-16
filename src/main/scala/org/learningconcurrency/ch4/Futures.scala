@@ -91,6 +91,24 @@ object FuturesExceptions extends App {
 }
 
 
+object FuturesTry extends App {
+  import scala.util._
+
+  val threadName: Try[String] = Try(Thread.currentThread.getName)
+  val someText: Try[String] = Try("Try objects are created synchronously")
+  val message = for {
+    tn <- threadName
+    st <- someText
+  } yield s"$st, t = $tn"
+
+  message match {
+    case Success(msg) => log(msg)
+    case Failure(error) => log(s"There should be no $error here.")
+  }
+
+}
+
+
 object FuturesMap extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
@@ -166,6 +184,19 @@ object FuturesRecover extends App {
     case contents => log(contents)
   }
 
+}
+
+
+object FuturesReduce extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+
+  val squares = for (i <- 0 until 10) yield Future { i * i }
+  val sumOfSquares = Future.reduce(squares)(_ + _)
+
+  sumOfSquares onSuccess {
+    case sum => log(s"Sum of squares = $sum")
+  }
 }
 
 
