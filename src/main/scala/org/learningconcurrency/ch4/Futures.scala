@@ -77,6 +77,7 @@ object FuturesExceptions extends App {
   }
 
   file onFailure {
+    case fnfe: java.io.FileNotFoundException => log(s"Cannot find file - $fnfe")
     case t => log(s"Failed due to $t")
   }
 
@@ -122,6 +123,25 @@ object FuturesFlatMap extends App {
   val answer = for {
     nettext <- netiquette
     urltext <- urlspec
+  } yield {
+    "First of all, read this: " + nettext + " Once you're done, try this: " + urltext
+  }
+
+  answer onSuccess {
+    case contents => log(contents)
+  }
+
+}
+
+
+object FuturesFlatMapBad extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.io.Source
+
+  val answer = for {
+    nettext <- Future { Source.fromURL("http://www.ietf.org/rfc/rfc1855.txt").mkString }
+    urltext <- Future { Source.fromURL("http://www.w3.org/Addressing/URL/url-spec.txt").mkString }
   } yield {
     "First of all, read this: " + nettext + " Once you're done, try this: " + urltext
   }

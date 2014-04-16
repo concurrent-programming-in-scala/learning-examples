@@ -10,6 +10,10 @@ resolvers ++= Seq(
   "Sonatype OSS Releases" at "https://oss.sonatype.org/content/repositories/releases"
 )
 
-libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.17.2"
+libraryDependencies += "commons-io" % "commons-io" % "2.4"
+
+libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.1"
+
+//libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.17.2"
 
 
