@@ -24,7 +24,7 @@ object ProcessLineCount extends App {
     val command = s"wc $filename"
     val output = command !!
 
-    output.trim.split(" ").filter(_ != "")(0).toInt
+    output.trim.split(" ").head.toInt
   }
 
   val lc = lineCount("build.sbt")
