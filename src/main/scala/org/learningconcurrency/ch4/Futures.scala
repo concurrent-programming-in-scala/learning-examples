@@ -152,7 +152,7 @@ object FuturesFlatMap extends App {
 }
 
 
-object FuturesFlatMapBad extends App {
+object FuturesDifferentFlatMap extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.io.Source

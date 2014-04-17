@@ -78,11 +78,8 @@ object PromisesAndCallbacks extends App {
     val observer = new FileAlterationObserver(directory)
     val listener = new FileAlterationListenerAdaptor {
       override def onFileCreate(file: File) {
-        try {
-          p.trySuccess(file.getName)
-        } finally {
-          fileMonitor.stop()
-        }
+        try p.trySuccess(file.getName)
+        finally fileMonitor.stop()
       }
     }
     observer.addListener(listener)

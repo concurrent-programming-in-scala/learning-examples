@@ -51,15 +51,17 @@ object AsyncWhile extends App {
   import ExecutionContext.Implicits.global
   import scala.async.Async.{async, await}
 
+  def delay(nSeconds: Int) = async {
+    blocking {
+      Thread.sleep(nSeconds * 1000)
+    }
+  }
+
   def countdown(nSeconds: Int)(count: Int => Unit): Future[Unit] = async {
     var i = nSeconds
     while (i > 0) {
       count(i)
-      await {
-        async {
-          blocking { Thread.sleep(1000) }
-        }
-      }
+      await { delay(1000) }
       i -= 1
     }
   }
