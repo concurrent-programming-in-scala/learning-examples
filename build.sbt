@@ -16,4 +16,6 @@ libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.1"
 
 libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.17.2"
 
+libraryDependencies += "org.scala-lang" % "scala-swing" % "2.10.3"
+            
 
