@@ -31,6 +31,20 @@ object ObservablesLifetime extends App {
 }
 
 
+object ObservablesFromFuture extends App {
+  import rx.lang.scala._
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+
+  val o = Observable.from(Future {
+    Thread.sleep(500)
+    "Back to the Future(s)"
+  })
+
+  o.subscribe(log _)
+}
+
+
 object ObservablesCombinators extends App {
   import rx.lang.scala._
 
@@ -82,14 +96,14 @@ object ObservablesCreateAsynchronous extends App {
     }
   }
 
-  log(s"adding subscription")
+  log(s"starting to monitor files")
   val subscription = modifiedFiles(".").subscribe(filename => log(s"$filename modified!"))
-  log(s"subscription added")
+  log(s"please modify and save a file")
 
   Thread.sleep(10000)
 
-  log(s"unsubscribing and exiting")
   subscription.unsubscribe()
+  log(s"monitoring done")
 
 }
 
@@ -106,18 +120,21 @@ object ObservablesHotVsCold extends App {
     val timer = new Timer
     var index = 0
     var subscribers = mutable.Set[Subscriber[String]]()
-    timer.schedule(this, 0L, 1000L)
+    def start() = timer.schedule(this, 0L, 1000L)
+    def stop() = timer.cancel()
 
     def run() {
       index = (index + 1) % songs.length
       Player.synchronized { for (s <- subscribers) s.onNext(songs(index)) }
     }
-    def add(s: Subscriber[String]) = Player.synchronized { subscribers += s }
-    def remove(s: Subscriber[String]) = Player.synchronized { subscribers -= s }
+    def turnOn(s: Subscriber[String]) = Player.synchronized { subscribers += s }
+    def turnOff(s: Subscriber[String]) = Player.synchronized { subscribers -= s }
   }
+  Player.start()
+
   val currentlyPlaying = Observable[String] { subscriber =>
-    Player.add(subscriber)
-    subscriber.add(Subscription { Player.remove(subscriber) })
+    Player.turnOn(subscriber)
+    subscriber.add(Subscription { Player.turnOff(subscriber) })
   }
 
   log(s"adding to a cold observable")
@@ -137,7 +154,7 @@ object ObservablesHotVsCold extends App {
   subscription2.unsubscribe()
   Thread.sleep(1200)
   log(s"Done -- shutting down the Player")
-  Player.timer.cancel()
+  Player.stop()
 
 }
 
