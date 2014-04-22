@@ -1,0 +1,102 @@
+package org.learningconcurrency
+package ch7
+
+
+
+
+
+
+object AtomicHistoryBad extends App {
+  import java.util.concurrent.atomic._
+  import scala.annotation.tailrec
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+
+  val urls = new AtomicReference[List[String]](Nil)
+  val size = new AtomicInteger(0)
+
+  def addUrl(url: String): Unit = {
+    @tailrec def append(): Unit = {
+      val oldUrls = urls.get
+      if (!urls.compareAndSet(oldUrls, url :: oldUrls)) append()
+    }
+    append()
+    size.addAndGet(url.size + 1)
+  }
+
+  def getUrlArray(): Array[Char] = {
+    val array = new Array[Char](size.get)
+    val urlList = urls.get
+    for ((character, i) <- urlList.map(_ + "\n").flatten.zipWithIndex) {
+      array(i) = character
+    }
+    array
+  }
+
+  Future {
+    addUrl("http://scala-lang.org")
+    addUrl("https://github.com/scala/scala")
+    addUrl("http://www.scala-lang.org/api")
+    log("done browsing")
+  }
+
+  Future {
+    try { log(s"sending: ${getUrlArray().mkString}") }
+    catch { case e: Exception => log(s"problems getting the array $e") }
+  }
+
+}
+
+
+object AtomicHistorySTM extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+
+  val urls = Ref[List[String]](Nil)
+  val size = Ref(0)
+
+  def addUrl(url: String): Unit = atomic { implicit txn =>
+    urls() = url :: urls()
+    size() = size() + url.length + 1
+  }
+
+  def getUrlArray(): Array[Char] = atomic { implicit txn =>
+    val array = new Array[Char](size())
+    for ((character, i) <- urls().map(_ + "\n").flatten.zipWithIndex) {
+      array(i) = character
+    }
+    array
+  }
+
+  Future {
+    addUrl("http://scala-lang.org")
+    addUrl("https://github.com/scala/scala")
+    addUrl("http://www.scala-lang.org/api")
+    log("done browsing")
+  }
+
+  Thread.sleep(100)
+
+  Future {
+    try { log(s"sending: ${getUrlArray().mkString}") }
+    catch { case e: Exception => log(s"problems getting the array $e") }
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

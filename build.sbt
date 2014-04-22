@@ -18,4 +18,6 @@ libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.17.2"
 
 libraryDependencies += "org.scala-lang" % "scala-swing" % "2.10.3"
             
+libraryDependencies += ("org.scala-stm" %% "scala-stm" % "0.7")
+
 
