@@ -10,7 +10,7 @@ object RetryHeadWait extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.concurrent.stm._
-  import CompositionNesting._
+  import CompositionSortedList._
 
   def headWait(lst: ConcurrentSortedList): Int = atomic { implicit txn =>
     if (lst.head() != null) lst.head().elem
@@ -34,7 +34,7 @@ object RetryChaining extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.concurrent.stm._
-  import CompositionNesting._
+  import CompositionSortedList._
   import RetryHeadWait._
 
   val list1 = new ConcurrentSortedList

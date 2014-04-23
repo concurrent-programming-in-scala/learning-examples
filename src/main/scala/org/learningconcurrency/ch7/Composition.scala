@@ -66,7 +66,7 @@ object CompositionMutations extends App {
 }
 
 
-object CompositionNesting extends App {
+object CompositionSortedList extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.concurrent.stm._
@@ -82,7 +82,7 @@ object CompositionNesting extends App {
       nodeToString(headNode)
     }
 
-    def insert(x: Int): Unit = atomic { implicit txn =>
+    def insert(x: Int): this.type = atomic { implicit txn =>
       @tailrec def insert(n: Node) {
         if (n.next() == null || n.next().elem > x) n.insertNext(new Node(x, Ref(null)))
         else insert(n.next())
@@ -90,6 +90,7 @@ object CompositionNesting extends App {
 
       if (head() == null || head().elem > x) head() = new Node(x, Ref(head()))
       else insert(head())
+      this
     }
   }
 
@@ -107,7 +108,7 @@ object CompositionExceptions extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.concurrent.stm._
-  import CompositionNesting._
+  import CompositionSortedList._
 
   def removeFirst(lst: ConcurrentSortedList, n: Int): Unit = atomic { implicit txn =>
     var left = n
@@ -149,11 +150,34 @@ object CompositionExceptions extends App {
 }
 
 
+object CompositionTransactionLocals extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+  import CompositionSortedList._
+
+  val myLog = TxnLocal("")
+
+  def clearList(lst: ConcurrentSortedList) = atomic { implicit txn =>
+    while (lst.head() != null) {
+      myLog() = myLog() + "\nremoved " + lst.head().elem
+      lst.head() = lst.head().next()
+    }
+    myLog()
+  }
+
+  val myList = new ConcurrentSortedList().insert(14).insert(22)
+  val clearOutput = clearList(myList)
+  log(s"Clear operation log:$clearOutput")
+
+}
+
+
 object CompositionLoopsBad extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.concurrent.stm._
-  import CompositionNesting._
+  import CompositionSortedList._
 
   def headWait(lst: ConcurrentSortedList): Int = atomic { implicit txn =>
     while (lst.head() == null) {}
@@ -170,7 +194,6 @@ object CompositionLoopsBad extends App {
   Future { myList.insert(1) }
 
 }
-
 
 
 
