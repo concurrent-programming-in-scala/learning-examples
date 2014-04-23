@@ -76,7 +76,9 @@ class ParentActor extends Actor {
 class ChildActor extends Actor {
   val log = Logging(context.system, this)
   def receive = {
-    case "sayhi" => log.info("hello, everybody!")
+    case "sayhi" =>
+      val parent = context.parent
+      log.info(s"my parent $parent made me say hi!")
   }
   override def postStop() {
     log.info("kid got stopped!")
@@ -96,6 +98,39 @@ object ActorsHierarchy extends App {
 }
 
 
+class CheckActor extends Actor {
+  import akka.actor.{Identify, ActorIdentity}
+  val log = Logging(context.system, this)
+  def receive = {
+    case path: String =>
+      log.info(s"checking path $path")
+      context.actorSelection(path) ! Identify(7)
+    case ActorIdentity(7, Some(ref)) =>
+      log.info(s"found actor $ref")
+    case ActorIdentity(7, None) =>
+      log.info("could not find an actor")
+  }
+}
+
+
+object ActorsIdentify extends App {
+  val checker = ourSystem.actorOf(Props[CheckActor], "checker")
+  checker ! "../*"
+  Thread.sleep(1000)
+  checker ! "../../*"
+  Thread.sleep(1000)
+  checker ! "/system/*"
+  Thread.sleep(1000)
+  checker ! "/user/checker2"
+  Thread.sleep(1000)
+  checker ! "akka://OurExampleSystem/system"
+  Thread.sleep(1000)
+  ourSystem.stop(checker)
+  Thread.sleep(1000)
+  ourSystem.shutdown()
+}
+
+
 class ExampleActor extends Actor {
   val log = Logging(context.system, this)
   var child: ActorRef = _
@@ -107,7 +142,7 @@ class ExampleActor extends Actor {
   }
   override def preStart(): Unit = {
     log.info("about to start")
-    child = context.actorOf(Props[ExampleChildActor], "kid")
+    child = context.actorOf(Props[StringPrinter], "kiddo")
   }
   override def preRestart(reason: Throwable, msg: Option[Any]): Unit = {
     log.info(s"about to restart because of $reason")
@@ -121,7 +156,7 @@ class ExampleActor extends Actor {
 }
 
 
-class ExampleChildActor extends Actor {
+class StringPrinter extends Actor {
   val log = Logging(context.system, this)
   def receive = {
     case msg => log.info(s"child got message '$msg'")
@@ -147,9 +182,6 @@ object ActorsLifecycle extends App {
   Thread.sleep(1000)
   ourSystem.shutdown()
 }
-
-
-
 
 
 
