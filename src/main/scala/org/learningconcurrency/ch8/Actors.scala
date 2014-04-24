@@ -8,6 +8,8 @@ import akka.actor.ActorRef
 import akka.event.Logging
 import akka.actor.Props
 import akka.actor.ActorSystem
+import scala.io.Source
+import scala.collection._
 
 
 
@@ -52,6 +54,56 @@ object ActorsUnhandled extends App {
   Thread.sleep(1000)
   deafActor ! "can you hear me?"
   ourSystem.stop(deafActor)
+  Thread.sleep(1000)
+  ourSystem.shutdown()
+}
+
+
+class DictionaryActor extends Actor {
+  private val log = Logging(context.system, this)
+  private val dictionary = mutable.Set[String]()
+  def receive = uninitialized
+  def uninitialized: PartialFunction[Any, Unit] = {
+    case DictionaryActor.Init => // from /usr/share/dict/words 
+      val stream = getClass.getResourceAsStream("/org/learningconcurrency/words.txt")
+      val words = Source.fromInputStream(stream)
+      for (w <- words.getLines) dictionary += w
+      context.become(initialized)
+    case msg =>
+      log.info(s"Unknown message '$msg' - did you initialize me?")
+  }
+  def initialized: PartialFunction[Any, Unit] = {
+    case DictionaryActor.IsWord(w) =>
+      log.info(s"word '$w' exists: ${dictionary(w)}")
+    case DictionaryActor.End =>
+      dictionary.clear()
+      context.become(uninitialized)
+  }
+}
+
+
+object DictionaryActor {
+  case object Init
+  case class IsWord(w: String)
+  case object End
+}
+
+
+object ActorsBecome extends App {
+  val dict = ourSystem.actorOf(Props[DictionaryActor], "dictionary")
+  dict ! DictionaryActor.IsWord("program")
+  Thread.sleep(1000)
+  dict ! DictionaryActor.Init
+  Thread.sleep(1000)
+  dict ! DictionaryActor.IsWord("program")
+  Thread.sleep(1000)
+  dict ! DictionaryActor.IsWord("balaban")
+  Thread.sleep(1000)
+  dict ! DictionaryActor.End
+  Thread.sleep(1000)
+  dict ! DictionaryActor.IsWord("termination")
+  Thread.sleep(1000)
+  ourSystem.stop(dict)
   Thread.sleep(1000)
   ourSystem.shutdown()
 }

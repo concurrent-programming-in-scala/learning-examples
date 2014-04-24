@@ -58,6 +58,37 @@ object CommunicatingAsk extends App {
 }
 
 
+class Logger extends Actor {
+  val log = Logging(context.system, this)
+  def receive = {
+    case msg => log.info(s"got '$msg' from $sender")
+  }
+}
+
+
+class Router extends Actor {
+  var i = 0
+  val children = for (_ <- 0 until 4) yield context.actorOf(Props[Logger])
+  def receive = {
+    case "stop" => context.stop(self)
+    case msg =>
+      children(i) forward msg
+      i = (i + 1) % 4
+  }
+}
+
+
+object CommunicatingRouter extends App {
+  val router = ourSystem.actorOf(Props[Router], "router")
+  router ! "Hi."
+  router ! "I'm talking to you!"
+  Thread.sleep(1000)
+  router ! "stop"
+  Thread.sleep(1000)
+  ourSystem.shutdown()
+}
+
+
 object CommunicatingPoisonPill extends App {
   val masta = ourSystem.actorOf(Props[Master], "masta")
   masta ! akka.actor.PoisonPill
@@ -96,6 +127,10 @@ object CommunicatingGracefulStop extends App {
       ourSystem.shutdown()
   }
 }
+
+
+
+
 
 
 
