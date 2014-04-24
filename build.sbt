@@ -23,3 +23,4 @@ libraryDependencies += "org.scala-stm" %% "scala-stm" % "0.7"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.2"
 
+libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.3.2"
