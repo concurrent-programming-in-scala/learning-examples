@@ -43,10 +43,12 @@ object FuturesCallbacks extends App {
   import ExecutionContext.Implicits.global
   import scala.io.Source
 
-  val urlSpec: Future[Seq[String]] = Future {
+  def getUrlSpec(): Future[Seq[String]] = Future {
     val f = Source.fromURL("http://www.w3.org/Addressing/URL/url-spec.txt")
     try f.getLines.toList finally f.close()
   }
+
+  val urlSpec: Future[Seq[String]] = getUrlSpec()
 
   def find(lines: Seq[String], word: String) = lines.zipWithIndex collect {
     case (line, n) if line.contains(word) => (n, line)

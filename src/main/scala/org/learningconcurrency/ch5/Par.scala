@@ -44,6 +44,23 @@ object ParGeneric extends App {
 }
 
 
+object ParConfig extends App {
+  import scala.collection._
+  import scala.concurrent.forkjoin.ForkJoinPool
+
+  val fjpool = new ForkJoinPool(2)
+  val myTaskSupport = new parallel.ForkJoinTaskSupport(fjpool)
+  val numbers = scala.util.Random.shuffle(Vector.tabulate(10000000)(i => i))
+  val partime = timed {
+    val parnumbers = numbers.par
+    parnumbers.tasksupport = myTaskSupport
+    val n = parnumbers.max
+    println(s"largest number $n")
+  }
+  log(s"Parallel time $partime ms")  
+}
+
+
 object ParHtmlSpecSearch extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
@@ -69,6 +86,16 @@ object ParHtmlSpecSearch extends App {
     log(s"Parallel time $partime ms")
   }
 
+}
+
+
+object ParNonParallelizableCollections extends App {
+  import scala.collection._
+
+  val list = List.fill(1000000)("")
+  val vector = Vector.fill(1000000)("")
+  log(s"list conversion time: ${timed(list.par)} ms")
+  log(s"vector conversion time: ${timed(vector.par)} ms")
 }
 
 
@@ -180,21 +207,14 @@ object ParSideEffectsCorrect extends App {
 }
 
 
-object ParConfig extends App {
+object ParMutableWrong extends App {
   import scala.collection._
-  import scala.concurrent.forkjoin.ForkJoinPool
 
-  val fjpool = new ForkJoinPool(2)
-  val myTaskSupport = new parallel.ForkJoinTaskSupport(fjpool)
-  val numbers = scala.util.Random.shuffle(Vector.tabulate(10000000)(i => i))
-  val partime = timed {
-    val parnumbers = numbers.par
-    parnumbers.tasksupport = myTaskSupport
-    val n = parnumbers.max
-    println(s"largest number $n")
-  }
-  log(s"Parallel time $partime ms")  
+  val buffer = mutable.ArrayBuffer[Int]() ++= (0 until 100)
+  for (x <- buffer.par) buffer += x
+  log(buffer.toString)
 }
+
 
 
 
