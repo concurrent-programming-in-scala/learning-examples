@@ -16,15 +16,15 @@ object SynchronizedProtectedUid extends App {
     freshUid
   }
 
-  def getUniqueIds(n: Int): Unit = {
+  def printUniqueIds(n: Int): Unit = {
     val uids = for (i <- 0 until n) yield getUniqueId()
     println(s"Generated uids: $uids")
   }
 
   val t = thread{
-    getUniqueIds(5)
+    printUniqueIds(5)
   }
-  getUniqueIds(5)
+  printUniqueIds(5)
   t.join()
 
 }
