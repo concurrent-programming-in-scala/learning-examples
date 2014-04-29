@@ -8,11 +8,12 @@ package ch2
 
 object ThreadsCreation extends App {
 
-  val t = new Thread {
+  class MyThread extends Thread {
     override def run(): Unit = {
       println("New thread running.")
     }
   }
+  val t = new MyThread
 
   t.start()
   t.join()
@@ -39,17 +40,20 @@ object ThreadsSleep extends App {
 
 object ThreadsNondeterminism extends App {
 
-  val t = thread {
-    log("New thread running.")
-  }
-  log("...")
-  log("...")
-  log("...")
+  val t = thread { log("New thread running.") }
   log("...")
   log("...")
   t.join()
   log("New thread joined.")
 
+}
+
+
+object ThreadsCommunicate extends App {
+  var result: String = null
+  val t = thread { result = "\nTitle\n" + "=" * 5 }
+  t.join()
+  log(result)
 }
 
 
