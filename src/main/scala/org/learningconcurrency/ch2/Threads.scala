@@ -85,16 +85,16 @@ object ThreadSharedStateAccessReordering extends App {
   for (i <- 0 until 10000) {
     var t1started = false
     var t2started = false
-    var t1index = 0
-    var t2index = 0
+    var t1index = -1
+    var t2index = -1
 
     val t1 = thread {
-      Thread.sleep(1)
+      Thread.sleep(2)
       t1started = true
       t2index = if (t2started) 0 else 1
     }
     val t2 = thread {
-      Thread.sleep(1)
+      Thread.sleep(2)
       t2started = true
       t1index = if (t1started) 0 else 1
     }

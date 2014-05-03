@@ -60,70 +60,116 @@ object SynchronizedSharedStateAccess extends App {
 
 object SynchronizedNesting extends App {
   import scala.collection._
-  val duplicates = mutable.ArrayBuffer[Int]()
-  val numbers = mutable.ArrayBuffer[Int]()
-  def addDuplicates(n: Int): Unit = {
-    if (numbers.filter(_ == n).size > 1) duplicates.synchronized {
-      duplicates += n
+  class Account(var money: Int)
+  val accounts = mutable.HashMap(
+    "John" -> new Account(100),
+    "Jane" -> new Account(200)
+  )
+  def add(name: String, money: Int) = accounts.synchronized {
+    accounts(name) = new Account(money)
+  }
+  def removePositive(name: String) = accounts.synchronized {
+    accounts.get(name) match {
+      case None =>
+      case Some(account) =>
+        account.synchronized {
+          if (account.money >= 0) accounts.remove(name)
+        }
     }
   }
-  val threads = for (i <- 1 to 2) yield thread {
-    for (n <- 0 until i * 10) numbers.synchronized {
-      numbers += n
-      addDuplicates(n)
-    }
-  }
-  for (t <- threads) t.join()
-  println(duplicates.mkString("\n"))
+  val t1 = thread { add("Jim", 10) }
+  val t2 = thread { removePositive("Jane") }
+  t1.join()
+  t2.join()
+  log(s"accounts - $accounts")
 }
 
 
 object SynchronizedDeadlock extends App {
-  case class Num(var n: Int)
-  def swap(n1: Num, n2: Num) = n1.synchronized {
-    n2.synchronized {
-      val tmp = n1.n
-      n1.n = n2.n
-      n2.n = tmp
+  import SynchronizedNesting._
+  def transfer(a1: Account, a2: Account, n: Int) = a1.synchronized {
+    a2.synchronized {
+      a1.money -= n
+      a2.money += n
     }
   }
-  val a = Num(1)
-  val b = Num(2)
-  val t1 = thread { for (i <- 0 until 100) swap(a, b) }
-  val t2 = thread { for (i <- 0 until 100) swap(b, a) }
+  val a = new Account(1000)
+  val b = new Account(2000)
+  val t1 = thread { for (i <- 0 until 100) transfer(a, b, 1) }
+  val t2 = thread { for (i <- 0 until 100) transfer(b, a, 1) }
   t1.join()
   t2.join()
   println(s"a = $a, b = $b")
 }
 
 
-object SynchronizedOrders extends App {
-  import scala.collection._
-  case class Delivery(name: String)
-  val orders = mutable.ArrayBuffer[String]()
-  val deliveries = mutable.ArrayBuffer[Delivery]()
-  val requests = for (i <- 0 until 3) yield thread {
-    for (k <- 0 until 100) orders.synchronized {
-      orders += s"Item-$i-$k"
-    }
+object SynchronizedNoDeadlock extends App {
+  import SynchronizedProtectedUid._
+  class Account(var money: Int) {
+    val uid = getUniqueId()
   }
-  val worker = thread {
-    var total = 0
-    while (total < 300) {
-      orders.synchronized {
-        if (orders.nonEmpty) deliveries.synchronized {
-          deliveries += Delivery(orders.last)
-          orders.remove(orders.length - 1)
-          total += 1
-        }
+  def transfer(a1: Account, a2: Account, n: Int) {
+    def adjust() {
+      a1.money -= n
+      a2.money += n
+    }
+    if (a1.uid < a2.uid)
+      a1.synchronized { a2.synchronized { adjust() } }
+    else
+      a2.synchronized { a1.synchronized { adjust() } }
+  }
+  val a = new Account(1000)
+  val b = new Account(2000)
+  val t1 = thread { for (i <- 0 until 100) transfer(a, b, 1) }
+  val t2 = thread { for (i <- 0 until 100) transfer(b, a, 1) }
+  t1.join()
+  t2.join()
+  println(s"a = $a, b = $b")
+}
+
+
+object SynchronizedDuplicates extends App {
+  import scala.collection._
+  val duplicates = mutable.Set[Int]()
+  val numbers = mutable.ArrayBuffer[Int]()
+  def isDuplicate(n: Int): Unit = duplicates.synchronized {
+    duplicates.contains(n)
+  }
+  def addDuplicate(n: Int): Unit = duplicates.synchronized {
+    duplicates += n
+  }
+  def addNumber(n: Int): Unit = numbers.synchronized {
+    numbers += n
+    if (numbers.filter(_ == n).size > 1) addDuplicate(n)
+  }
+  val threads = for (i <- 1 to 2) yield thread {
+    for (n <- 0 until i * 10) addNumber(n)
+  }
+  for (t <- threads) t.join()
+  println(duplicates.mkString("\n"))
+}
+
+
+object SynchronizedBadPool extends App {
+  import scala.collection._
+  private val tasks = mutable.Queue[() => Unit]()
+  val worker = new Thread {
+    override def run() = while (true) tasks.synchronized {
+      if (tasks.nonEmpty) {
+        val task = tasks.dequeue()
+        task()
       }
     }
   }
-  for (r <- requests) r.join()
-  worker.join()
-  println(deliveries.mkString("\n"))
-  println(s"Total deliveries: ${deliveries.size}")
-  println(s"Total orders left: ${orders.size}")
+  worker.setDaemon(true)
+  worker.start()
+
+  def asynchronous(body: =>Unit) = tasks.synchronized {
+    tasks.enqueue(() => body)
+  }
+
+  asynchronous { log("Hello") }
+  asynchronous { log(" world!")}
 }
 
 
@@ -132,7 +178,7 @@ object SynchronizedMonitors extends App {
   val greeter = thread {
     this.synchronized {
       while (message == None) this.wait()
-      println(message.get)
+      log(message.get)
     }
   }
   this.synchronized {
@@ -144,13 +190,13 @@ object SynchronizedMonitors extends App {
 
 
 object SynchronizedPool {
-  private val tasks = scala.collection.mutable.Queue[() => Unit]()
+  import scala.collection._
+  private val tasks = mutable.Queue[() => Unit]()
   val worker = new Thread {
     override def run() = while (true) tasks.synchronized {
       while (tasks.isEmpty) tasks.wait()
       val task = tasks.dequeue()
       task()
-      run()
     }
   }
   worker.setDaemon(true)
@@ -162,8 +208,8 @@ object SynchronizedPool {
   }
 
   def main(args: Array[String]): Unit = {
-    asynchronous { println("Hello ") }
-    asynchronous { println("World!") }
+    asynchronous { log("Hello ") }
+    asynchronous { log("World!") }
   }
 }
 
