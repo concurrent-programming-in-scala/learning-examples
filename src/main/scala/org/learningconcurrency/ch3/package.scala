@@ -8,11 +8,9 @@ import scala.concurrent._
 
 package object ch3 {
 
-  def runnable(body: =>Unit) = new Runnable {
+  def execute(body: =>Unit) = ExecutionContext.global.execute(new Runnable {
     def run() = body
-  }
-
-  def execute(r: Runnable) = ExecutionContext.global.execute(r)
+  })
 
 }
 

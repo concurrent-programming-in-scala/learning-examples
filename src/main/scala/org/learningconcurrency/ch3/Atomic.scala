@@ -19,9 +19,9 @@ object AtomicUid extends App {
     else getUniqueId()
   }
 
-  execute(runnable {
+  execute {
     log(s"Got a unique id asynchronously: $getUniqueId")
-  })
+  }
 
   log(s"Got a unique id: $getUniqueId")
 }
@@ -52,7 +52,7 @@ object AtomicStack {
   }
 
   def main(args: Array[String]) {
-    execute(runnable {
+    execute {
       @tailrec def poll() {
         pop() match {
           case Some(-1) =>
@@ -65,7 +65,7 @@ object AtomicStack {
         }
       }
       poll()
-    })
+    }
   
     push(1)
     push(2)
@@ -88,9 +88,9 @@ object AtomicArrays extends App {
     cnt
   }
 
-  for (i <- 0 until counts.length) execute(runnable {
+  for (i <- 0 until counts.length) execute {
     for (_ <- 0 until 200) counts.incrementAndGet(i)
-  })
+  }
 
   log(s"Count lower bound: ${lowerBound()}")
   log(s"Count lower bound: ${lowerBound()}")

@@ -187,8 +187,11 @@ object SynchronizedGuardedBlocks extends App {
 
 object SynchronizedPool extends App {
   import scala.collection._
+
   private val tasks = mutable.Queue[() => Unit]()
-  val worker = new Thread {
+
+  object Worker extends Thread {
+    setDaemon(true)
     def poll() = tasks.synchronized {
       while (tasks.isEmpty) tasks.wait()
       tasks.dequeue()
@@ -196,10 +199,10 @@ object SynchronizedPool extends App {
     override def run() = while (true) {
       val task = poll()
       task()
-    } 
+    }
   }
-  worker.setDaemon(true)
-  worker.start()
+
+  Worker.start()
 
   def asynchronous(body: =>Unit) = tasks.synchronized {
     tasks.enqueue(() => body)
@@ -210,6 +213,43 @@ object SynchronizedPool extends App {
   asynchronous { log("World!") }
 }
 
+
+object SynchronizedGracefulShutdown extends App {
+  import scala.collection._
+  import scala.annotation.tailrec
+
+  private val tasks = mutable.Queue[() => Unit]()
+
+  object Worker extends Thread {
+    var terminated = false
+    def poll(): Option[() => Unit] = tasks.synchronized {
+      while (tasks.isEmpty && !terminated) tasks.wait()
+      if (!terminated) Some(tasks.dequeue()) else None
+    }
+    @tailrec override def run() = poll() match {
+      case Some(task) => task(); run()
+      case None =>
+    }
+    def shutdown() = tasks.synchronized {
+      terminated = true
+      tasks.notify()
+    }
+  }
+
+  Worker.start()
+
+  def asynchronous(body: =>Unit) = tasks.synchronized {
+    tasks.enqueue(() => body)
+    tasks.notify()
+  }
+
+  asynchronous { log("Hello ") }
+  asynchronous { log("World!") }
+
+  Thread.sleep(1000)
+
+  Worker.shutdown()
+}
 
 
 

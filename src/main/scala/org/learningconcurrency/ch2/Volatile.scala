@@ -6,8 +6,26 @@ package ch2
 
 
 
+object Volatile extends App {
+  case class Page(txt: String, var position: Int)
+  val pages = for (i <- 1 to 5) yield
+    new Page("Na" * (100 - 20 * i) + " Batman!", -1)
+  @volatile var found = false
+  for (p <- pages) yield thread {
+    var i = 0
+    while (i < p.txt.length && !found)
+      if (p.txt(i) == '!') {
+        p.position = i
+        found = true
+      } else i += 1
+  }
+  while (!found) {}
+  log(s"results: ${pages.map(_.position)}")
+}
+
+
 object VolatileScan extends App {
-  val document: Seq[String] = for (i <- 1 to 5) yield "lorem ipsum " * (1000 - 200 * i) + "Leslie"
+  val document: Seq[String] = for (i <- 1 to 5) yield "lorem ipsum " * (1000 - 200 * i) + "Scala"
   var results = Array.fill(document.length)(-1)
   @volatile var found = false
   val threads = for (i <- 0 until document.length) yield thread {
@@ -16,7 +34,7 @@ object VolatileScan extends App {
         results(i) = n
         found = true
       } else if (!found) scan(n + 1, words, query)
-    scan(0, document(i).split(" "), "Leslie")
+    scan(0, document(i).split(" "), "Scala")
   }
   for (t <- threads) t.join()
   log(s"Found: ${results.find(_ != -1)}")

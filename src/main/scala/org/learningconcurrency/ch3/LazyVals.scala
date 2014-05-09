@@ -12,10 +12,10 @@ object LazyValsCreate extends App {
   lazy val obj = new AnyRef
   lazy val nondeterministic = s"made by ${Thread.currentThread.getName}"
 
-  execute(runnable {
+  execute {
     log(s"Execution context thread sees object = $obj")
     log(s"Execution context thread sees nondeterministic = $nondeterministic")
-  })
+  }
 
   log(s"Main thread sees object = $obj")
   log(s"Main thread sees nondeterministic = $nondeterministic")
@@ -55,7 +55,7 @@ object LazyValsInspectMainThread extends App {
     log(s"main thread state - ${mainThread.getState}")
   }
 
-  execute(runnable { x })
+  execute { x }
 
   log("started asynchronous thread")
   Thread.sleep(200)
@@ -72,7 +72,7 @@ object LazyValsDeadlock extends App {
     lazy val y: Int = A.x
   }
 
-  execute(runnable { B.y })
+  execute { B.y }
 
   A.x
 }
