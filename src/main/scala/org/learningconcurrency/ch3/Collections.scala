@@ -11,15 +11,13 @@ object CollectionsBad extends App {
 
   val buffer = mutable.ArrayBuffer[Int]()
 
-  execute {
-    buffer ++= (0 until 10)
+  def add(numbers: Seq[Int]) = execute {
+    buffer ++= numbers
     log(s"buffer = $buffer")
   }
 
-  execute {
-    buffer ++= (10 until 20)
-    log(s"buffer = $buffer")
-  }
+  add(0 until 10)
+  add(10 until 20)
 }
 
 
@@ -85,6 +83,19 @@ object MiscDynamicVars extends App {
 }
 
 
+object CollectionsIterators extends App {
+  import java.util.concurrent._
+
+  val queue = new LinkedBlockingQueue[String]
+  for (i <- 1 to 5500) queue.offer(i.toString)
+  execute {
+    val it = queue.iterator
+    while (it.hasNext) log(it.next())
+  }
+  for (i <- 1 to 5500) queue.poll()
+}
+
+
 object CollectionsConcurrentMap extends App {
   import java.util.concurrent.ConcurrentHashMap
   import scala.collection._
@@ -146,13 +157,13 @@ object CollectionsConcurrentMapBulk extends App {
   import scala.collection.convert.decorateAsScala._
   import java.util.concurrent.ConcurrentHashMap
 
-  val names = new ConcurrentHashMap[String, String]().asScala
-  names("John") = "Doe"
-  names("Jane") = "Doe"
-  names("Jack") = "Daniels"
+  val names = new ConcurrentHashMap[String, Int]().asScala
+  names("Johnny") = 0
+  names("Jane") = 0
+  names("Jack") = 0
 
   execute {
-    for (n <- 0 until 10) names(s"John $n") = ", of Scotland"
+    for (n <- 0 until 10) names(s"John $n") = n
   }
 
   execute {
@@ -162,21 +173,21 @@ object CollectionsConcurrentMapBulk extends App {
 }
 
 
-object CollectionsTrieMap extends App {
+object CollectionsTrieMapBulk extends App {
   import scala.collection._
 
-  val names = new concurrent.TrieMap[String, String]
-  names("Janice") = "Joplin"
-  names("Jackie") = "Chan"
-  names("Jill") = "of the Jungle"
+  val names = new concurrent.TrieMap[String, Int]
+  names("Janice") = 0
+  names("Jackie") = 0
+  names("Jill") = 0
 
   execute {
-    for (n <- 0 until 100) names(s"John $n") = s", $n. Duke of Scotland"
+    for (n <- 0 until 100) names(s"John $n") = n
   }
 
   execute {
     log("snapshot time!")
-    for (n <- names) log(s"Found name: $n")
+    for (n <- names.map(_._1).toSeq.sorted) log(s"name: $n")
   }
 
 }

@@ -13,13 +13,36 @@ import org.apache.commons.io.FileUtils
 
 
 
-class FileSystem {
+object FileSystemTest extends App {
+  val fileSystem = new FileSystem(".")
 
-  val actions: mutable.Buffer[String] =
-    new mutable.ArrayBuffer[String]
-    with mutable.SynchronizedBuffer[String]
+  fileSystem.logMessage("Testing log!")
 
-  def logAction(msg: String): Unit = actions += msg
+  log(s"all files: ${fileSystem.files}")
+
+  fileSystem.deleteFile("test.txt")
+
+  fileSystem.copyFile("build.sbt", "build.sbt.backup")
+}
+
+
+class FileSystem(val root: String) {
+
+  val logger = new Thread {
+    setDaemon(true)
+    override def run() {
+      while (true) {
+        val msg = messages.take()
+        log(msg)
+      }
+    }
+  }
+
+  logger.start()
+
+  private val messages = new LinkedBlockingQueue[String]
+
+  def logMessage(msg: String): Unit = messages.add(msg)
 
   sealed trait State
 
@@ -39,6 +62,10 @@ class FileSystem {
     //new ConcurrentHashMap().asScala
     new concurrent.TrieMap()
 
+  for (file <- FileUtils.iterateFiles(new File(root), null, false).asScala) {
+    files.put(file.getName, new Entry(false))
+  }
+
   @tailrec private def prepareForDelete(entry: Entry): Boolean = {
     val s0 = entry.state.get
     s0 match {
@@ -46,10 +73,10 @@ class FileSystem {
         if (entry.state.compareAndSet(s0, new Deleting)) true
         else prepareForDelete(entry)
       case c: Creating =>
-        logAction("File currently being created, cannot delete.")
+        logMessage("File currently being created, cannot delete.")
         false
       case c: Copying =>
-        logAction("File currently being copied, cannot delete.")
+        logMessage("File currently being copied, cannot delete.")
         false
       case d: Deleting =>
         false
@@ -59,14 +86,14 @@ class FileSystem {
   def deleteFile(filename: String): Unit = {
     files.get(filename) match {
       case None =>
-        // file already deleted, nothing to do
-      case Some(entry) if !entry.isDir =>
-        logAction(s"Cannot delete - path '$filename' is a directory!")
+        logMessage(s"Cannot delete - path '$filename' does not exist!")
+      case Some(entry) if entry.isDir =>
+        logMessage(s"Cannot delete - path '$filename' is a directory!")
       case Some(entry) =>
         execute {
           if (prepareForDelete(entry)) {
             if (FileUtils.deleteQuietly(new File(filename)))
-              files.remove(filename, entry)
+              files.remove(filename)
           }
         }
     }
@@ -75,18 +102,15 @@ class FileSystem {
   @tailrec private def acquire(entry: Entry): Boolean = {
     val s0 = entry.state.get
     s0 match {
+      case _: Creating | _: Deleting =>
+        logMessage("File inaccessible, cannot copy.")
+        false
       case i: Idle =>
         if (entry.state.compareAndSet(s0, new Copying(1))) true
         else acquire(entry)
-      case c: Creating =>
-        logAction("File being created, cannot copy.")
-        false
       case c: Copying =>
         if (entry.state.compareAndSet(s0, new Copying(c.n + 1))) true
         else acquire(entry)
-      case d: Deleting =>
-        logAction("File already deleted, cannot copy.")
-        false
     }
   }
 
@@ -96,13 +120,12 @@ class FileSystem {
       case i: Idle =>
         sys.error("Error - released more times than acquired.")
       case c: Creating =>
-        sys.error("Error - released an entry that is now created.")
+        if (!entry.state.compareAndSet(s0, new Idle)) release(entry)
       case c: Copying if c.n <= 0 =>
         sys.error("Error - cannot have 0 or less copies in progress!")
       case c: Copying =>
         val newState = if (c.n == 0) new Idle else new Copying(c.n - 1)
-        if (entry.state.compareAndSet(s0, newState)) {} // done
-        else release(entry)
+        if (!entry.state.compareAndSet(s0, newState)) release(entry)
       case d: Deleting =>
         sys.error("Error - releasing a file that is being deleted!")
     }
@@ -111,8 +134,8 @@ class FileSystem {
   def copyFile(src: String, dest: String): Unit = {
     files.get(src) match {
       case None =>
-        logAction(s"File '$src' does not exist.")
-      case Some(srcEntry) if !srcEntry.isDir =>
+        logMessage(s"File '$src' does not exist.")
+      case Some(srcEntry) if srcEntry.isDir =>
         sys.error(s"Path '$src' is a directory!")
       case Some(srcEntry) =>
         execute {

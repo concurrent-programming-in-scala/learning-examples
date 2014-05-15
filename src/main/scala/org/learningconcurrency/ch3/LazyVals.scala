@@ -35,14 +35,16 @@ object LazyValsObject extends App {
 
 object LazyValsUnderTheHood extends App {
   @volatile private var _bitmap = false
-  @volatile private var _obj: AnyRef = _
+  private var _obj: AnyRef = _
   def obj = if (_bitmap) _obj else this.synchronized {
-    _obj = new AnyRef
-    _bitmap = true
+    if (!_bitmap) {
+      _obj = new AnyRef
+      _bitmap = true
+    }
     _obj
   }
 
-  log(s"$obj")
+  log(s"$obj"); log(s"$obj")
 }
 
 
@@ -91,7 +93,7 @@ object LazyValsAndSynchronized extends App {
 }
 
 
-object LazyValsAndStartingThreads extends App {
+object LazyValsAndBlocking extends App {
   lazy val x: Int = {
     val t = ch2.thread {
       println(s"Initializing $x.")
@@ -102,6 +104,14 @@ object LazyValsAndStartingThreads extends App {
   x
 }
 
+
+object LazyValsAndMonitors extends App {
+  lazy val x = 1
+  this.synchronized {
+    val t = ch2.thread { x }
+    t.join()
+  }
+}
 
 
 
