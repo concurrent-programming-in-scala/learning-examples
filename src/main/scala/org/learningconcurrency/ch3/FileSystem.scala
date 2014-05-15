@@ -18,11 +18,12 @@ object FileSystemTest extends App {
 
   fileSystem.logMessage("Testing log!")
 
-  log(s"all files: ${fileSystem.files}")
-
   fileSystem.deleteFile("test.txt")
 
   fileSystem.copyFile("build.sbt", "build.sbt.backup")
+
+  val rootFiles = fileSystem.filesInDir("")
+  log("All files in the root dir: " + rootFiles.mkString(", "))
 }
 
 

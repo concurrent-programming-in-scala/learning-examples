@@ -21,14 +21,22 @@ object ProcessLineCount extends App {
   import scala.sys.process._
 
   def lineCount(filename: String): Int = {
-    val command = s"wc $filename"
-    val output = command !!
+    val output = s"wc $filename" !!
 
     output.trim.split(" ").head.toInt
   }
 
   val lc = lineCount("build.sbt")
   log(s"File build.sbt has $lc lines.")
+}
+
+
+object ProcessAsync extends App {
+  import scala.sys.process._
+  val lsProcess = "ls -R /".run()
+  Thread.sleep(1000)
+  log("Timeout - killing ls!")
+  lsProcess.destroy()
 }
 
 
