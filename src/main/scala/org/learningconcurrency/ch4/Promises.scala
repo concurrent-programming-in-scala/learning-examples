@@ -37,7 +37,7 @@ object PromisesCustomAsync extends App {
   import ExecutionContext.Implicits.global
   import scala.util.control.NonFatal
 
-  def myAsync[T](body: =>T): Future[T] = {
+  def myFuture[T](body: =>T): Future[T] = {
     val p = Promise[T]
 
     global.execute(new Runnable {
@@ -53,7 +53,7 @@ object PromisesCustomAsync extends App {
     p.future
   }
 
-  val future = myAsync {
+  val future = myFuture {
     "naaa" + "na" * 8 + " Katamary Damacy!"
   }
 
@@ -69,7 +69,6 @@ object PromisesAndCallbacks extends App {
   import ExecutionContext.Implicits.global
   import org.apache.commons.io.monitor._
   import java.io.File
-
 
   def fileCreated(directory: String): Future[String] = {
     val p = Promise[String]

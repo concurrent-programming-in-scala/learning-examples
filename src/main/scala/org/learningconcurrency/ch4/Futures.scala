@@ -6,7 +6,7 @@ package ch4
 
 
 
-object FuturesCreate extends App {
+object FuturesComputation extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
 
@@ -19,7 +19,7 @@ object FuturesCreate extends App {
 }
 
 
-object FuturesType extends App {
+object FuturesDataType extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.io.Source
@@ -62,8 +62,23 @@ object FuturesCallbacks extends App {
     case lines => log(s"Found occurrences of 'password'\n${find(lines, "password")}\n")
   }
 
-  log("request started, continuing with other work")
+  log("callbacks installed, continuing with other work")
 
+}
+
+
+object FuturesFailure extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.io.Source
+
+  val urlSpec: Future[String] = Future {
+    Source.fromURL("http://www.w3.org/non-existent-url-spec.txt").mkString
+  }
+
+  urlSpec onFailure {
+    case t => log(s"exception occurred - $t")
+  }
 }
 
 
@@ -98,7 +113,7 @@ object FuturesTry extends App {
 
   val threadName: Try[String] = Try(Thread.currentThread.getName)
   val someText: Try[String] = Try("Try objects are created synchronously")
-  val message = for {
+  val message: Try[String] = for {
     tn <- threadName
     st <- someText
   } yield s"$st, t = $tn"
@@ -108,6 +123,48 @@ object FuturesTry extends App {
     case Failure(error) => log(s"There should be no $error here.")
   }
 
+}
+
+
+object FuturesNonFatal extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+
+  val f = Future { throw new InterruptedException }
+  val g = Future { throw new IllegalArgumentException }
+  f onFailure { case t => log(s"error - $t") }
+  g onFailure { case t => log(s"error - $t") }
+}
+
+
+object FuturesClumsyCallback extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import org.apache.commons.io.FileUtils._
+  import java.io._
+  import scala.io.Source
+  import scala.collection.convert.decorateAsScala._
+
+  def blacklistFile(filename: String) = Future {
+    val lines = Source.fromFile(filename).getLines
+    lines.filter(!_.startsWith("#")).toList
+  }
+  
+  def findFiles(patterns: List[String]): List[String] = {
+    val root = new File(".")
+    for {
+      f <- iterateFiles(root, null, true).asScala.toList
+      pat <- patterns
+      abspat = root.getCanonicalPath + File.separator + pat
+      if f.getCanonicalPath.contains(abspat)
+    } yield f.getCanonicalPath
+  }
+
+  blacklistFile(".gitignore") onSuccess {
+    case lines =>
+      val files = findFiles(lines)
+      log(s"matches: ${files.mkString("\n")}")
+  }
 }
 
 
@@ -133,16 +190,35 @@ object FuturesMap extends App {
 }
 
 
+object FuturesFlatMapRaw extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.io.Source
+
+  val netiquette = Future { Source.fromURL("http://www.ietf.org/rfc/rfc1855.txt").mkString }
+  val urlSpec = Future { Source.fromURL("http://www.w3.org/Addressing/URL/url-spec.txt").mkString }
+  val answer = netiquette.flatMap { nettext =>
+    urlSpec.map { urltext =>
+      "First, read this: " + nettext + ". Now, try this: " + urltext
+    }
+  }
+
+  answer onSuccess {
+    case contents => log(contents)
+  }
+}
+
+
 object FuturesFlatMap extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
   import scala.io.Source
 
   val netiquette = Future { Source.fromURL("http://www.ietf.org/rfc/rfc1855.txt").mkString }
-  val urlspec = Future { Source.fromURL("http://www.w3.org/Addressing/URL/url-spec.txt").mkString }
+  val urlSpec = Future { Source.fromURL("http://www.w3.org/Addressing/URL/url-spec.txt").mkString }
   val answer = for {
     nettext <- netiquette
-    urltext <- urlspec
+    urltext <- urlSpec
   } yield {
     "First of all, read this: " + nettext + " Once you're done, try this: " + urltext
   }
@@ -178,8 +254,12 @@ object FuturesRecover extends App {
   import ExecutionContext.Implicits.global
   import scala.io.Source
 
-  val netiquette = Future { Source.fromURL("http://www.ietf.org/rfc/rfc1855.doc").mkString } recover {
-    case _ => "Dear boss, thank you for your e-mail. You might want to turn that CAPS LOCK off."
+  val netiquetteUrl = "http://www.ietf.org/rfc/rfc1855.doc"
+  val netiquette = Future { Source.fromURL(netiquetteUrl).mkString } recover {
+    case f: java.io.FileNotFoundException =>
+      "Dear boss, thank you for your e-mail." +
+      "You might be interested to know that ftp links " +
+      "can also point to regular files we keep on our servers."
   }
 
   netiquette onSuccess {

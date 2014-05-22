@@ -165,6 +165,7 @@ object SynchronizedBadPool extends App {
 
   asynchronous { log("Hello") }
   asynchronous { log(" world!")}
+  Thread.sleep(100)
 }
 
 
