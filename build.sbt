@@ -11,6 +11,8 @@ resolvers ++= Seq(
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 )
 
+fork := false
+
 libraryDependencies += "commons-io" % "commons-io" % "2.4"
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.1"

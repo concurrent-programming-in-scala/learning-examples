@@ -57,11 +57,23 @@ object AsyncWhile extends App {
     }
   }
 
+  def simpleCount(): Future[Unit] = async {
+    log("T-minus 2 seconds")
+    await { delay(1) }
+    log("T-minus 1 second")
+    await { delay(1) }
+    log("done!")
+  }
+
+  simpleCount()
+
+  Thread.sleep(3000)
+
   def countdown(nSeconds: Int)(count: Int => Unit): Future[Unit] = async {
     var i = nSeconds
     while (i > 0) {
       count(i)
-      await { delay(1000) }
+      await { delay(1) }
       i -= 1
     }
   }

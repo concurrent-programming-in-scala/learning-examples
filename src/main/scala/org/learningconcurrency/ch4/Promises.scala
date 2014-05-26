@@ -102,8 +102,8 @@ object PromisesAndCustomOperations extends App {
   implicit class FutureOps[T](val self: Future[T]) {
     def or(that: Future[T]): Future[T] = {
       val p = Promise[T]
-      self onSuccess { case x => p trySuccess x }
-      that onSuccess { case y => p trySuccess y }
+      self onComplete { case x => p tryComplete x }
+      that onComplete { case y => p tryComplete y }
       p.future
     }
   }
@@ -142,6 +142,40 @@ object PromisesAndTimers extends App {
     case text => log(text)
   }
 
+}
+
+
+object PromisesCancellation extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+
+  def cancellable[T](b: Future[Unit] => T): (Promise[Unit], Future[T]) = {
+    val p = Promise[Unit]
+    val f = Future {
+      val r = b(p.future)
+      if (!p.tryFailure(new Exception))
+        throw new CancellationException
+      r
+    }
+    (p, f)
+  }
+
+  val (cancel, value) = cancellable { cancel =>
+    var i = 0
+    while (i < 5) {
+      if (cancel.isCompleted) throw new CancellationException
+      Thread.sleep(500)
+      log(s"$i: working")
+      i += 1
+    }
+    "resulting value"
+  }
+
+  Thread.sleep(1500)
+
+  cancel trySuccess ()
+
+  log("computation cancelled!")
 }
 
 
