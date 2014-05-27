@@ -175,7 +175,7 @@ object ParNonAssociativeOperator extends App {
     log(s"Sequential result - $seqtext\n")
     log(s"Parallel result   - $partext\n")
   }
-  test(0 until 10)
+  test(0 until 30)
 }
 
 
