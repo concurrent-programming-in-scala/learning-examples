@@ -125,7 +125,7 @@ object ParNonParallelizableOperations extends App {
   getHtmlSpec() onSuccess { case specDoc =>
     def allMatches(d: GenSeq[String]) = warmedTimed() {
       val results = d.foldLeft("")((acc, line) => if (line.matches(".*TEXTAREA.*")) s"$acc\n$line" else acc)
-      // Note: must use "fold" instead of "foldLeft"!
+      // Note: must use "aggregate" instead of "foldLeft"!
     }
 
     val seqtime = allMatches(specDoc)
