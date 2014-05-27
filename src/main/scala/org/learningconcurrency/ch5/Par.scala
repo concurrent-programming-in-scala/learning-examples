@@ -9,7 +9,7 @@ package ch5
 object ParBasic extends App {
   import scala.collection._
 
-  val numbers = scala.util.Random.shuffle(Vector.tabulate(10000000)(i => i))
+  val numbers = scala.util.Random.shuffle(Vector.tabulate(5000000)(i => i))
 
   val seqtime = timed {
     val n = numbers.max
@@ -68,7 +68,7 @@ object ParConfig extends App {
 
   val fjpool = new ForkJoinPool(2)
   val myTaskSupport = new parallel.ForkJoinTaskSupport(fjpool)
-  val numbers = scala.util.Random.shuffle(Vector.tabulate(10000000)(i => i))
+  val numbers = scala.util.Random.shuffle(Vector.tabulate(5000000)(i => i))
   val partime = timed {
     val parnumbers = numbers.par
     parnumbers.tasksupport = myTaskSupport
