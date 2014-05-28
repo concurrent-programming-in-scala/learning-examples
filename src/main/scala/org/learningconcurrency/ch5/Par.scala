@@ -228,7 +228,7 @@ object ParSideEffectsCorrect extends App {
 object ParMutableWrong extends App {
   import scala.collection._
 
-  val buffer = mutable.ArrayBuffer[Int]() ++= (0 until 100)
+  val buffer = mutable.ArrayBuffer[Int]() ++= (0 until 250)
   for (x <- buffer.par) buffer += x
   log(buffer.toString)
 }
