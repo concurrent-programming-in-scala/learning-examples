@@ -125,7 +125,7 @@ class FileSystem(val root: String) {
       case c: Copying if c.n <= 0 =>
         sys.error("Error - cannot have 0 or less copies in progress!")
       case c: Copying =>
-        val newState = if (c.n == 0) new Idle else new Copying(c.n - 1)
+        val newState = if (c.n == 1) new Idle else new Copying(c.n - 1)
         if (!entry.state.compareAndSet(s0, newState)) release(entry)
       case d: Deleting =>
         sys.error("Error - releasing a file that is being deleted!")
