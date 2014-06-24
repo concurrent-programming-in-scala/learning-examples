@@ -16,6 +16,27 @@ object ObservablesItems extends App {
 }
 
 
+object ObservablesTimer extends App {
+  import rx.lang.scala._
+  import scala.concurrent.duration._
+
+  val o = Observable.timer(1 second)
+  o.subscribe(_ => log(s"Timeout!"))
+  o.subscribe(_ => log(s"Another timeout!"))
+}
+
+
+object ObservablesExceptions extends App {
+  import rx.lang.scala._
+
+  val o = Observable.items(1, 2) ++ Observable.error(new RuntimeException) ++ Observable.items(3, 4)
+  o.subscribe(
+    x => log(s"number $x"),
+    t => log(s"an error occurred: $t")
+  )
+}
+
+
 object ObservablesLifetime extends App {
   import rx.lang.scala._
 

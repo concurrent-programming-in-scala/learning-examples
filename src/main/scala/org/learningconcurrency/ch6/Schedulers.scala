@@ -80,9 +80,11 @@ object SchedulersEventQueueThread extends scala.swing.SimpleSwingApplication {
     }
   }
 
-  val swingScheduler = schedulers.ExecutorScheduler(new Executor {
-    def execute(r: Runnable) = javax.swing.SwingUtilities.invokeLater(r)
-  })
+  val swingScheduler = new Scheduler {
+    val asJavaScheduler = rx.schedulers.Schedulers.from(new Executor {
+      def execute(r: Runnable) = javax.swing.SwingUtilities.invokeLater(r)
+    })
+  }
 
   trait BrowserLogic {
     self: BrowserFrame =>
