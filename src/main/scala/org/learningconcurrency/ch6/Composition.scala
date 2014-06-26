@@ -19,6 +19,39 @@ object CompositionMapAndFilter extends App {
 }
 
 
+object CompositionConcatAndFlatten extends App {
+  import rx.lang.scala._
+  import scala.concurrent._
+  import scala.concurrent.duration._
+  import ExecutionContext.Implicits.global
+  import scala.io.Source
+
+  def fetchQuote(): Future[String] = Future {
+    blocking {
+      val url = "http://www.iheartquotes.com/api/v1/random?show_permalink=false&show_source=false"
+      Source.fromURL(url).getLines.mkString
+    }
+  }
+
+  def fetchQuoteObservable(): Observable[String] = Observable.from(fetchQuote())
+
+  def quotes: Observable[Observable[String]] = Observable.interval(0.5 seconds).take(5).map {
+    n => fetchQuoteObservable().map(txt => s"$n) $txt")
+  }
+  
+  log(s"Using concat")
+  quotes.concat.subscribe(log _)
+
+  Thread.sleep(6000)
+
+  log(s"Now using flatten")
+  quotes.flatten.subscribe(log _)
+
+  Thread.sleep(6000)
+
+}
+
+
 // There is always one more bug.
 object CompositionRetry extends App {
   import rx.lang.scala._
@@ -52,34 +85,6 @@ object CompositionReduce extends App {
   }
 
   shortQuotesCollection.subscribe(log _)
-
-}
-
-
-object CompositionConcatAndFlatten extends App {
-  import rx.lang.scala._
-  import scala.concurrent._
-  import ExecutionContext.Implicits.global
-  import scala.io.Source
-
-  def quotes: Observable[Observable[String]] = Observable.from(1 to 5).map { n =>
-    Observable.from(Future {
-      blocking {
-        val url = "http://www.iheartquotes.com/api/v1/random?show_permalink=false&show_source=false"
-        n + ") " + Source.fromURL(url).getLines.mkString
-      }
-    })
-  }
-  
-  log(s"Using concat")
-  quotes.concat.subscribe(log _)
-
-  Thread.sleep(6000)
-
-  log(s"Now using flatten")
-  quotes.flatten.subscribe(log _)
-
-  Thread.sleep(6000)
 
 }
 

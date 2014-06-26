@@ -43,11 +43,55 @@ object ObservablesLifetime extends App {
   val classics = List("Il buono, il brutto, il cattivo.", "Back to the future", "Die Hard")
   val o = Observable.from(classics)
 
-  o.subscribe(
-    m => log(s"Movies Watchlist - $m"),
-    e => log(s"Ooops - $e!"),
-    () => log(s"No more movies.")
-  )
+  o.subscribe(new Observer[String] {
+    override def onNext(m: String) = log(s"Movies Watchlist - $m")
+    override def onError(e: Throwable) = log(s"Ooops - $e!")
+    override def onCompleted() = log(s"No more movies.")
+  })
+}
+
+
+object ObservablesCreate extends App {
+  import rx.lang.scala._
+
+  val vms = Observable.create[String] { obs =>
+    obs.onNext("JVM")
+    obs.onNext(".NET")
+    obs.onNext("DartVM")
+    obs.onCompleted()
+    Subscription()
+  }
+
+  log(s"About to subscribe")
+  vms.subscribe(log _, e => log(s"oops - $e"), () => log("Done!"))
+  log(s"Subscription returned")
+
+}
+
+
+object ObservablesCreateFuture extends App {
+  import rx.lang.scala._
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+
+  val f = Future {
+    Thread.sleep(500)
+    "Back to the Future(s)"
+  }
+
+  val o = Observable.create[String] { obs =>
+    f onSuccess {
+      case s =>
+        obs.onNext(s)
+        obs.onCompleted()
+    }
+    f onFailure {
+      case t => obs.onError(t)
+    }
+    Subscription()
+  }
+
+  o.subscribe(log _)
 
 }
 
@@ -78,42 +122,24 @@ object ObservablesCombinators extends App {
 }
 
 
-object ObservablesCreate extends App {
-  import rx.lang.scala._
-
-  val vms = Observable[String] { subscriber =>
-    subscriber.onNext("JVM")
-    subscriber.onNext(".NET")
-    subscriber.onNext("DartVM")
-    subscriber.onCompleted()
-  }
-
-  log(s"About to subscribe")
-  vms.subscribe(log _, e => log(s"oops - $e"), () => log("Done!"))
-  log(s"Subscription returned")
-
-}
-
-
-object ObservablesCreateAsynchronous extends App {
+object ObservablesSubscriptions extends App {
   import rx.lang.scala._
   import org.apache.commons.io.monitor._
-  import java.io.File
 
   def modifiedFiles(directory: String): Observable[String] = {
-    Observable { subscriber =>
+    Observable.create { observer =>
       val fileMonitor = new FileAlterationMonitor(1000)
       val fileObs = new FileAlterationObserver(directory)
       val fileLis = new FileAlterationListenerAdaptor {
-        override def onFileChange(file: File) {
-          subscriber.onNext(file.getName)
+        override def onFileChange(file: java.io.File) {
+          observer.onNext(file.getName)
         }
       }
       fileObs.addListener(fileLis)
       fileMonitor.addObserver(fileObs)
       fileMonitor.start()
 
-      subscriber.add(Subscription { fileMonitor.stop() })
+      Subscription { fileMonitor.stop() }
     }
   }
 
@@ -125,6 +151,48 @@ object ObservablesCreateAsynchronous extends App {
 
   subscription.unsubscribe()
   log(s"monitoring done")
+
+}
+
+
+object ObservablesHot extends App {
+  import rx.lang.scala._
+  import org.apache.commons.io.monitor._
+
+  val fileMonitor = new FileAlterationMonitor(1000)
+  fileMonitor.start()
+
+  def modifiedFiles(directory: String): Observable[String] = {
+    val fileObs = new FileAlterationObserver(directory)
+    fileMonitor.addObserver(fileObs)
+    Observable.create { observer =>
+      val fileLis = new FileAlterationListenerAdaptor {
+        override def onFileChange(file: java.io.File) {
+          observer.onNext(file.getName)
+        }
+      }
+      fileObs.addListener(fileLis)
+
+      Subscription { fileObs.removeListener(fileLis) }
+    }
+  }
+
+  log(s"first subscribe call")
+  val subscription1 = modifiedFiles(".").subscribe(filename => log(s"$filename modified!"))
+
+  Thread.sleep(6000)
+
+  log(s"another subscribe call")
+  val subscription2 = modifiedFiles(".").subscribe(filename => log(s"$filename changed!"))
+
+  Thread.sleep(6000)
+
+  log(s"unsubscribed second call")
+  subscription2.unsubscribe()
+
+  Thread.sleep(6000)
+
+  fileMonitor.stop()
 
 }
 

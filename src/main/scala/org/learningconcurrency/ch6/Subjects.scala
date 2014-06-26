@@ -9,7 +9,7 @@ package ch6
 object SubjectsOS extends App {
   import rx.lang.scala._
   import scala.concurrent.duration._
-  import ObservablesCreateAsynchronous._
+  import ObservablesSubscriptions._
 
   object OS {
     val messageBus = Subject[String]()
