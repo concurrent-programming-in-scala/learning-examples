@@ -49,6 +49,22 @@ object CompositionConcatAndFlatten extends App {
 
   Thread.sleep(6000)
 
+  log(s"Now using flatMap")
+  Observable.interval(0.5 seconds).take(5).flatMap({
+    n => fetchQuoteObservable().map(txt => s"$n) $txt")
+  }).subscribe(log _)
+
+  Thread.sleep(6000)
+
+  log(s"Now using good ol' for-comprehensions")
+  val qs = for {
+    n   <- Observable.interval(0.5 seconds).take(5)
+    txt <- fetchQuoteObservable()
+  } yield s"$n) $txt"
+  qs.subscribe(log _)
+
+  Thread.sleep(6000)
+
 }
 
 
@@ -57,21 +73,34 @@ object CompositionRetry extends App {
   import rx.lang.scala._
   import scala.concurrent.duration._
   import scala.io.Source
+  import Observable._
 
-  def quote = Observable[String] { subscriber =>
-    val url = "http://www.iheartquotes.com/api/v1/random?show_permalink=false&show_source=false"
-    val text = Source.fromURL(url).getLines.mkString
-    if (text.size > 100) {
-      subscriber.onNext("<quote too long>")
-      subscriber.onError(new Exception("Too long"))
-    } else {
-      subscriber.onNext(text.mkString)
-      subscriber.onCompleted()
-    }
+  def randomQuote = Observable.create[String] { obs =>
+    val url = "http://www.iheartquotes.com/api/v1/random?" +
+      "show_permalink=false&show_source=false"
+    obs.onNext(Source.fromURL(url).getLines.mkString)
+    obs.onCompleted()
+    Subscription()
   }
 
-  quote.retry.take(3).subscribe(log _, e => log(s"cannot find quote - $e"), () => log("done!"))
+  def errorMessage = items("Retrying...") ++ error(new Exception)
+  
+  def shortQuote = for {
+    txt     <- randomQuote
+    message <- if (txt.length < 100) items(txt) else errorMessage
+  } yield message
 
+  shortQuote.retry(5).subscribe(log _, e => log(s"too long - $e"), () => log("done!"))
+
+}
+
+
+object CompositionScan extends App {
+  import rx.lang.scala._
+
+  CompositionRetry.shortQuote.retry.repeat.take(100).scan(0) {
+    (n, q) => if (q == "Retrying...") n + 1 else n
+  } subscribe(n => log(s"$n / 100"))
 }
 
 
@@ -79,7 +108,7 @@ object CompositionReduce extends App {
   import rx.lang.scala._
   import scala.concurrent.duration._
 
-  def shortQuote = CompositionRetry.quote.retry.take(5).filter(_ != "<quote too long>")
+  def shortQuote = CompositionRetry.randomQuote.retry.take(5).filter(_ != "Retrying...")
   val shortQuotesCollection = (shortQuote ++ shortQuote ++ shortQuote).foldLeft("") { (acc, q) =>
     s"$acc$q\n\n"
   }
