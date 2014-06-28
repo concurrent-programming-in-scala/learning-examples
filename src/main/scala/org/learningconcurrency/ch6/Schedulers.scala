@@ -6,6 +6,17 @@ package ch6
 
 
 
+object SchedulersComputation extends App {
+  import rx.lang.scala._
+
+  val scheduler = schedulers.ComputationScheduler()
+  val numbers = Observable.from(0 until 20)
+  numbers.subscribe(n => log(s"num $n"))
+  numbers.observeOn(scheduler).subscribe(n => log(s"num $n"))
+
+}
+
+
 object SchedulersSwing extends scala.swing.SimpleSwingApplication {
   import rx.lang.scala._
   import scala.swing._
@@ -32,7 +43,7 @@ object SchedulersSwing extends scala.swing.SimpleSwingApplication {
 }
 
 
-object SchedulersEventQueueThread extends scala.swing.SimpleSwingApplication {
+object SchedulersBrowser extends scala.swing.SimpleSwingApplication {
   import rx.lang.scala._
   import scala.concurrent._
   import ExecutionContext.Implicits.global
