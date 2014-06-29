@@ -11,24 +11,27 @@ object SubjectsOS extends App {
   import scala.concurrent.duration._
   import ObservablesSubscriptions._
 
-  object OS {
+  object RxOS {
     val messageBus = Subject[String]()
     messageBus.subscribe(log _)
   }
 
-  object KernelModuleA {
+  object TimeModule {
     val systemClock = Observable.interval(1 seconds).map(t => s"systime: $t")
   }
 
-  object KernelModuleB {
-    val fileSystem = modifiedFiles(".").map(filename => s"file modification: $filename")
+  object FileSystemModule {
+    val fileModifications = modifiedFiles(".").map(filename => s"file modification: $filename")
   }
 
-  val loadedModules =
-    for (mod <- List(KernelModuleA.systemClock, KernelModuleB.fileSystem)) yield
-      mod.subscribe(OS.messageBus)
+  log(s"RxOS booting...")
+  val modules = List(
+    TimeModule.systemClock,
+    FileSystemModule.fileModifications
+  )
+  val loadedModules = modules.map(_.subscribe(RxOS.messageBus))
+  log(s"RxOS boot sequence finished!")
 
-  log(s"RxOS booted!")
   Thread.sleep(10000)
   for (mod <- loadedModules) mod.unsubscribe()
   log(s"RxOS going for shutdown")
@@ -38,17 +41,19 @@ object SubjectsOS extends App {
 
 object SubjectsOSLog extends App {
   import rx.lang.scala._
-  import SubjectsOS.{KernelModuleA, KernelModuleB}
+  import SubjectsOS.{TimeModule, FileSystemModule}
 
-  object OS {
+  object RxOS {
+    val messageBus = Subject[String]()
     val messageLog = subjects.ReplaySubject[String]()
+    messageBus.subscribe(log _)
+    messageBus.subscribe(messageLog)
   }
 
-  val loadedModules = 
-    for (mod <- List(KernelModuleA.systemClock, KernelModuleB.fileSystem)) yield {
-      OS.messageLog.onNext(s"loading module $mod")
-      mod.subscribe(OS.messageLog)
-    }
+  val loadedModules = List(
+    TimeModule.systemClock,
+    FileSystemModule.fileModifications
+  ).map(_.subscribe(RxOS.messageBus))
 
   log(s"RxOS booting")
   Thread.sleep(1000)
@@ -56,7 +61,7 @@ object SubjectsOSLog extends App {
   Thread.sleep(10000)
   for (mod <- loadedModules) mod.unsubscribe()
   log(s"RxOS dumping the complete event log")
-  OS.messageLog.subscribe(log _)
+  RxOS.messageLog.subscribe(log _)
   log(s"RxOS going for shutdown")
 
 }
