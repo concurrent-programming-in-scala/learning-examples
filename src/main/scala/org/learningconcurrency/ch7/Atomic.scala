@@ -13,7 +13,7 @@ object AtomicHistoryBad extends App {
   import ExecutionContext.Implicits.global
 
   val urls = new AtomicReference[List[String]](Nil)
-  val size = new AtomicInteger(0)
+  val clen = new AtomicInteger(0)
 
   def addUrl(url: String): Unit = {
     @tailrec def append(): Unit = {
@@ -21,11 +21,11 @@ object AtomicHistoryBad extends App {
       if (!urls.compareAndSet(oldUrls, url :: oldUrls)) append()
     }
     append()
-    size.addAndGet(url.size + 1)
+    clen.addAndGet(url.size + 1)
   }
 
   def getUrlArray(): Array[Char] = {
-    val array = new Array[Char](size.get)
+    val array = new Array[Char](clen.get)
     val urlList = urls.get
     for ((character, i) <- urlList.map(_ + "\n").flatten.zipWithIndex) {
       array(i) = character
@@ -34,15 +34,15 @@ object AtomicHistoryBad extends App {
   }
 
   Future {
+    try { log(s"sending: ${getUrlArray().mkString}") }
+    catch { case e: Exception => log(s"problems getting the array $e") }
+  }
+
+  Future {
     addUrl("http://scala-lang.org")
     addUrl("https://github.com/scala/scala")
     addUrl("http://www.scala-lang.org/api")
     log("done browsing")
-  }
-
-  Future {
-    try { log(s"sending: ${getUrlArray().mkString}") }
-    catch { case e: Exception => log(s"problems getting the array $e") }
   }
 
 }
