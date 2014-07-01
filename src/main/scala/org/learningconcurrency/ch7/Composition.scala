@@ -71,17 +71,20 @@ object CompositionList extends App {
   import scala.concurrent.stm._
 
   case class Node(val elem: Int, val next: Ref[Node]) {
-    def insertNext(n: Node): Unit = atomic { implicit txn =>
+    def append(n: Node): Unit = atomic { implicit txn =>
       val oldNext = next()
       next() = n
       n.next() = oldNext
     }
     def nextNode: Node = next.single()
+    def appendIfEnd(n: Node) = next.single.transform {
+      oldNext => if (oldNext == null) n else oldNext
+    }
   }
 
   val nodes = Node(1, Ref(Node(4, Ref(Node(5, Ref(null))))))
-  val f = Future { nodes.insertNext(Node(2, Ref(null))) }
-  val g = Future { nodes.insertNext(Node(3, Ref(null))) }
+  val f = Future { nodes.append(Node(2, Ref(null))) }
+  val g = Future { nodes.append(Node(3, Ref(null))) }
 
   for (_ <- f; _ <- g) log(s"Next node is: ${nodes.nextNode}")
 
@@ -125,7 +128,7 @@ object CompositionSortedList extends App {
 
     def insert(x: Int): this.type = atomic { implicit txn =>
       @tailrec def insert(n: Node) {
-        if (n.next() == null || n.next().elem > x) n.insertNext(new Node(x, Ref(null)))
+        if (n.next() == null || n.next().elem > x) n.append(new Node(x, Ref(null)))
         else insert(n.next())
       }
 
