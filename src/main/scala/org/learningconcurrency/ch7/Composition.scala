@@ -24,6 +24,47 @@ object CompositionSideEffects extends App {
 }
 
 
+object CompositionCorrectSideEffect extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+
+  val myValue = Ref(0)
+
+  def inc() = atomic { implicit txn =>
+    val valueAtStart = myValue()
+    Txn.afterCommit { _ =>
+      log(s"Incrementing $valueAtStart")
+    }
+    myValue() = myValue() + 1
+  }
+
+  Future { inc() }
+  Future { inc() }
+
+}
+
+
+object CompositionLoggingRollback extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+
+  val myValue = Ref(0)
+
+  def inc() = atomic { implicit txn =>
+    Txn.afterRollback { _ =>
+      log(s"rollin' back")
+    }
+    myValue() = myValue() + 1
+  }
+
+  Future { inc() }
+  Future { inc() }
+
+}
+
+
 object CompositionList extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
@@ -194,11 +235,6 @@ object CompositionLoopsBad extends App {
   Future { myList.insert(1) }
 
 }
-
-
-
-
-
 
 
 
