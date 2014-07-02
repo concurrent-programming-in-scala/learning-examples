@@ -154,7 +154,7 @@ object CompositionExceptions extends App {
   import scala.concurrent.stm._
   import CompositionSortedList._
 
-  def removePrefix(lst: TSortedList, n: Int): Unit = atomic { implicit txn =>
+  def pop(lst: TSortedList, n: Int): Unit = atomic { implicit txn =>
     var left = n
     while (left > 0) {
       lst.head() = lst.head().next()
@@ -168,13 +168,13 @@ object CompositionExceptions extends App {
   lst.insert(1)
   lst.insert(16)
 
-  Future { removePrefix(lst, 2) } onSuccess { case _ => log(s"removed 2 - $lst") }
+  Future { pop(lst, 2) } onSuccess { case _ => log(s"removed 2 elements - $lst") }
   Thread.sleep(1000)
-  Future { removePrefix(lst, 3) } onFailure { case t => log(s"oops $t - $lst") }
+  Future { pop(lst, 3) } onFailure { case t => log(s"oops $t - $lst") }
   Thread.sleep(1000)
   Future {
     atomic { implicit txn =>
-      removePrefix(lst, 1)
+      pop(lst, 1)
       sys.error("")
     }
   } onFailure { case t => log(s"oops again $t - $lst") }
@@ -183,36 +183,31 @@ object CompositionExceptions extends App {
   import scala.util.control.Breaks._
   Future {
     breakable {
-      for (n <- List(1, 2, 3)) atomic { implicit txn =>
-        removePrefix(lst, n)
-        break
+      atomic { implicit txn =>
+        for (n <- List(1, 2, 3)) {
+          pop(lst, n)
+          break
+        }
       }
     }
     log(s"after removing - $lst")
   }
+  Thread.sleep(1000)
 
-}
-
-
-object CompositionTransactionLocals extends App {
-  import scala.concurrent._
-  import ExecutionContext.Implicits.global
-  import scala.concurrent.stm._
-  import CompositionSortedList._
-
-  val myLog = TxnLocal("")
-
-  def clearList(lst: TSortedList) = atomic { implicit txn =>
-    while (lst.head() != null) {
-      myLog() = myLog() + "\nremoved " + lst.head().elem
-      lst.head() = lst.head().next()
+  import scala.util.control._
+  Future {
+    breakable {
+      atomic.withControlFlowRecognizer {
+        case c: ControlThrowable => false
+      } { implicit txn =>
+        for (n <- List(1, 2, 3)) {
+          pop(lst, n)
+          break
+        }
+      }
     }
-    myLog()
+    log(s"after removing - $lst")
   }
-
-  val myList = new TSortedList().insert(14).insert(22)
-  val clearOutput = clearList(myList)
-  log(s"Clear operation log:$clearOutput")
 
 }
 

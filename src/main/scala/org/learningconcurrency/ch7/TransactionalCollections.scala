@@ -6,6 +6,29 @@ package ch7
 
 
 
+object TransactionLocals extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+  import CompositionSortedList._
+
+  val myLog = TxnLocal("")
+
+  def clearList(lst: TSortedList) = atomic { implicit txn =>
+    while (lst.head() != null) {
+      myLog() = myLog() + "\nremoved " + lst.head().elem
+      lst.head() = lst.head().next()
+    }
+    myLog()
+  }
+
+  val myList = new TSortedList().insert(14).insert(22)
+  val clearOutput = clearList(myList)
+  log(s"Clear operation log:$clearOutput")
+
+}
+
+
 object TransactionalArray extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
@@ -29,6 +52,28 @@ object TransactionalArray extends App {
   Future { replace("2.11", "2.12") }
   Thread.sleep(250)
   Future { log(s"Document\n$asString") }
+
+}
+
+
+object TransactionalMap extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+
+  val tmap = TMap("a" -> 1, "B" -> 2, "C" -> 3)
+
+  Future {
+    atomic { implicit txn =>
+      tmap("A") = 1
+      tmap.remove("a")
+    }
+  }
+  Thread.sleep(18)
+  Future {
+    val snap = tmap.single.snapshot
+    log(s"atomic snapshot: $snap")
+  }
 
 }
 
@@ -64,28 +109,6 @@ object TransactionalDocument extends App {
   Future { doc.addPage("What concurrency means to you.") }
   Thread.sleep(250)
   Future { log(s"Document\n$doc") }
-
-}
-
-
-object TransactionalMap extends App {
-  import scala.concurrent._
-  import ExecutionContext.Implicits.global
-  import scala.concurrent.stm._
-
-  val tmap = TMap("a" -> 1, "B" -> 2, "C" -> 3)
-
-  Future {
-    atomic { implicit txn =>
-      tmap("A") = 1
-      tmap.remove("a")
-    }
-  }
-  Thread.sleep(18)
-  Future {
-    val snap = tmap.single.snapshot
-    log(s"atomic snapshot: $snap")
-  }
 
 }
 
