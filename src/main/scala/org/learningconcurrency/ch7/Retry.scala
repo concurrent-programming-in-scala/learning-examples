@@ -6,6 +6,29 @@ package ch7
 
 
 
+object RetryHeadWaitBad extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+  import CompositionSortedList._
+
+  def headWait(lst: TSortedList): Int = atomic { implicit txn =>
+    while (lst.head() == null) {}
+    lst.head().elem
+  }
+
+  val myList = new TSortedList
+
+  Future {
+    val headElem = headWait(myList)
+    log(s"The first element is $headElem")
+  }
+  Thread.sleep(1000)
+  Future { myList.insert(1) }
+
+}
+
+
 object RetryHeadWait extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global
@@ -41,9 +64,8 @@ object RetryChaining extends App {
   val list2 = new TSortedList
   val allElements = Ref[List[Int]](Nil)
 
-  def addToAll(x: Int) = atomic { implicit txn =>
-    allElements() = x :: allElements()
-  }
+  def addToAll(x: Int) =
+    allElements.single.transform(xs => x :: xs)
 
   val f = Future {
     atomic { implicit txn =>
