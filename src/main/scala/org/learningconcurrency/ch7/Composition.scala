@@ -118,7 +118,7 @@ object CompositionSortedList extends App {
   import CompositionMutations._
   import scala.annotation.tailrec
 
-  class ConcurrentSortedList {
+  class TSortedList {
     val head = Ref[Node](null)
 
     override def toString = atomic { implicit txn =>
@@ -127,7 +127,7 @@ object CompositionSortedList extends App {
     }
 
     def insert(x: Int): this.type = atomic { implicit txn =>
-      @tailrec def insert(n: Node) {
+      @tailrec def insert(n: Node): Unit = {
         if (n.next() == null || n.next().elem > x) n.append(new Node(x, Ref(null)))
         else insert(n.next())
       }
@@ -138,7 +138,7 @@ object CompositionSortedList extends App {
     }
   }
 
-  val sortedList = new ConcurrentSortedList
+  val sortedList = new TSortedList
 
   val f = Future { sortedList.insert(1); sortedList.insert(4) }
   val g = Future { sortedList.insert(2); sortedList.insert(3) }
@@ -154,7 +154,7 @@ object CompositionExceptions extends App {
   import scala.concurrent.stm._
   import CompositionSortedList._
 
-  def removeFirst(lst: ConcurrentSortedList, n: Int): Unit = atomic { implicit txn =>
+  def removePrefix(lst: TSortedList, n: Int): Unit = atomic { implicit txn =>
     var left = n
     while (left > 0) {
       lst.head() = lst.head().next()
@@ -162,19 +162,19 @@ object CompositionExceptions extends App {
     }
   }
 
-  val lst = new ConcurrentSortedList
+  val lst = new TSortedList
   lst.insert(4)
   lst.insert(9)
   lst.insert(1)
   lst.insert(16)
 
-  Future { removeFirst(lst, 2) } onSuccess { case _ => log(s"removed 2 - $lst") }
+  Future { removePrefix(lst, 2) } onSuccess { case _ => log(s"removed 2 - $lst") }
   Thread.sleep(1000)
-  Future { removeFirst(lst, 3) } onFailure { case t => log(s"oops $t - $lst") }
+  Future { removePrefix(lst, 3) } onFailure { case t => log(s"oops $t - $lst") }
   Thread.sleep(1000)
   Future {
     atomic { implicit txn =>
-      removeFirst(lst, 1)
+      removePrefix(lst, 1)
       sys.error("")
     }
   } onFailure { case t => log(s"oops again $t - $lst") }
@@ -184,7 +184,7 @@ object CompositionExceptions extends App {
   Future {
     breakable {
       for (n <- List(1, 2, 3)) atomic { implicit txn =>
-        removeFirst(lst, n)
+        removePrefix(lst, n)
         break
       }
     }
@@ -202,7 +202,7 @@ object CompositionTransactionLocals extends App {
 
   val myLog = TxnLocal("")
 
-  def clearList(lst: ConcurrentSortedList) = atomic { implicit txn =>
+  def clearList(lst: TSortedList) = atomic { implicit txn =>
     while (lst.head() != null) {
       myLog() = myLog() + "\nremoved " + lst.head().elem
       lst.head() = lst.head().next()
@@ -210,7 +210,7 @@ object CompositionTransactionLocals extends App {
     myLog()
   }
 
-  val myList = new ConcurrentSortedList().insert(14).insert(22)
+  val myList = new TSortedList().insert(14).insert(22)
   val clearOutput = clearList(myList)
   log(s"Clear operation log:$clearOutput")
 
@@ -223,12 +223,12 @@ object CompositionLoopsBad extends App {
   import scala.concurrent.stm._
   import CompositionSortedList._
 
-  def headWait(lst: ConcurrentSortedList): Int = atomic { implicit txn =>
+  def headWait(lst: TSortedList): Int = atomic { implicit txn =>
     while (lst.head() == null) {}
     lst.head().elem
   }
 
-  val myList = new ConcurrentSortedList
+  val myList = new TSortedList
 
   Future {
     val headElem = headWait(myList)

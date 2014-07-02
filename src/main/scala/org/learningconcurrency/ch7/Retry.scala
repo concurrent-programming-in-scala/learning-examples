@@ -12,12 +12,12 @@ object RetryHeadWait extends App {
   import scala.concurrent.stm._
   import CompositionSortedList._
 
-  def headWait(lst: ConcurrentSortedList): Int = atomic { implicit txn =>
+  def headWait(lst: TSortedList): Int = atomic { implicit txn =>
     if (lst.head() != null) lst.head().elem
     else retry
   }
 
-  val myList = new ConcurrentSortedList
+  val myList = new TSortedList
 
   Future {
     blocking {
@@ -37,8 +37,8 @@ object RetryChaining extends App {
   import CompositionSortedList._
   import RetryHeadWait._
 
-  val list1 = new ConcurrentSortedList
-  val list2 = new ConcurrentSortedList
+  val list1 = new TSortedList
+  val list2 = new TSortedList
   val allElements = Ref[List[Int]](Nil)
 
   def addToAll(x: Int) = atomic { implicit txn =>
