@@ -23,8 +23,13 @@ object TransactionLocals extends App {
   }
 
   val myList = new TSortedList().insert(14).insert(22)
-  val clearOutput = clearList(myList)
-  log(s"Clear operation log:$clearOutput")
+  val f = Future { clearList(myList) }
+  val g = Future { clearList(myList) }
+  for (h1 <- f; h2 <- g) {
+  log(s"Log for f: $h1\nLog for g: $h2")
+
+}
+
 
 }
 
@@ -69,7 +74,7 @@ object TransactionalMap extends App {
       tmap.remove("a")
     }
   }
-  Thread.sleep(18)
+  Thread.sleep(23)
   Future {
     val snap = tmap.single.snapshot
     log(s"atomic snapshot: $snap")
