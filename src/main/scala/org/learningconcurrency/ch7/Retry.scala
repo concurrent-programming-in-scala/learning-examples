@@ -60,31 +60,24 @@ object RetryChaining extends App {
   import CompositionSortedList._
   import RetryHeadWait._
 
-  val list1 = new TSortedList
-  val list2 = new TSortedList
-  val allElements = Ref[List[Int]](Nil)
+  val queue1 = new TSortedList
+  val queue2 = new TSortedList
 
-  def addToAll(x: Int) =
-    allElements.single.transform(xs => x :: xs)
-
-  val f = Future {
-    atomic { implicit txn =>
-      log(s"probe list1")
-      addToAll(headWait(list1))
-    } orAtomic { implicit txn =>
-      log(s"probe list2")
-      addToAll(headWait(list2))
+  val consumer = Future {
+    blocking {
+      atomic { implicit txn =>
+        log(s"probe queue1")
+        log(s"got: ${headWait(queue1)}")
+      } orAtomic { implicit txn =>
+        log(s"probe list2")
+        log(s"got: ${headWait(queue2)}")
+      }
     }
   }
-  Future { list2.insert(2) }
-  Thread.sleep(40)
-  Future { list1.insert(1) }
-
-  val g = for (_ <- f) yield allElements.single()
-
-  g onSuccess {
-    case elems => log(s"All elements: $elems")
-  }
+  Thread.sleep(50)
+  Future { queue2.insert(2) }
+  Thread.sleep(50)
+  Future { queue1.insert(1) }
 
 }
 
@@ -96,17 +89,18 @@ object RetryTimeouts extends App {
 
   val message = Ref("")
 
-  val f = Future {
-    atomic.withRetryTimeout(1000) { implicit txn =>
-      if (message() != "") s"got a message - ${message()}"
-      else retry
+  Future {
+    blocking {
+      atomic.withRetryTimeout(1000) { implicit txn =>
+        if (message() != "") s"got a message - ${message()}"
+        else retry
+      }
     }
-  }
-  f onSuccess {
+  } onSuccess {
     case msg => log(msg)
   }
 
-  Thread.sleep(1000)
+  Thread.sleep(1025)
 
   atomic { implicit txn =>
     message() = "Howdy!"
@@ -114,6 +108,30 @@ object RetryTimeouts extends App {
 
 }
 
+
+object RetryFor extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+
+  val message = Ref("")
+
+  Future {
+    blocking {
+      atomic { implicit txn =>
+        if (message() == "") {
+          retryFor(1000)
+          log(s"no message - '${message()}'")
+        } else log(s"got a message - '${message()}'")
+      }
+    }
+  }
+
+  Thread.sleep(1025)
+
+  message.single() = "Howdy!"
+
+}
 
 
 
