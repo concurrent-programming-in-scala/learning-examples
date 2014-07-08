@@ -32,7 +32,7 @@ object HelloActor {
 
 
 object ActorsCreate extends App {
-  val hiActor = ourSystem.actorOf(HelloActor.props("hi"), name = "greeter")
+  val hiActor: ActorRef = ourSystem.actorOf(HelloActor.props("hi"), name = "greeter")
   hiActor ! "hi"
   Thread.sleep(1000)
   hiActor ! "hola"
@@ -44,7 +44,10 @@ object ActorsCreate extends App {
 class DeafActor extends Actor {
   val log = Logging(context.system, this)
   def receive = PartialFunction.empty
-  override def unhandled(msg: Any) = log.info(s"could not handle '$msg'")
+  override def unhandled(msg: Any) = msg match {
+    case msg: String => log.info(s"could not handle '$msg'")
+    case _           => super.unhandled(msg)
+  }
 }
 
 
@@ -52,8 +55,28 @@ object ActorsUnhandled extends App {
   val deafActor = ourSystem.actorOf(Props[DeafActor], name = "deafy")
   deafActor ! "hi"
   Thread.sleep(1000)
-  deafActor ! "can you hear me?"
-  ourSystem.stop(deafActor)
+  deafActor ! 1234
+  Thread.sleep(1000)
+  ourSystem.shutdown()
+}
+
+
+class CountdownActor extends Actor {
+  var n = 10
+  def counting: Actor.Receive = {
+    case "count" =>
+      n -= 1
+      log(s"n = $n")
+      if (n == 0) context.become(done)
+  }
+  def done = PartialFunction.empty
+  def receive = counting
+}
+
+
+object ActorsCountdown extends App {
+  val countdown = ourSystem.actorOf(Props[CountdownActor])
+  for (i <- 0 until 20) countdown ! "count"
   Thread.sleep(1000)
   ourSystem.shutdown()
 }
@@ -78,6 +101,9 @@ class DictionaryActor extends Actor {
     case DictionaryActor.End =>
       dictionary.clear()
       context.become(uninitialized)
+  }
+  override def unhandled(msg: Any) = {
+    log.info("message $msg should not be sent in this state.")
   }
 }
 
