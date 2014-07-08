@@ -135,7 +135,7 @@ class ParentActor extends Actor {
   val log = Logging(context.system, this)
   def receive = {
     case "create" =>
-      context.actorOf(Props[ChildActor], "kid")
+      context.actorOf(Props[ChildActor])
       log.info(s"created a new child - children = ${context.children}")
     case "sayhi" =>
       log.info("Kids, say hi!")
@@ -155,13 +155,14 @@ class ChildActor extends Actor {
       log.info(s"my parent $parent made me say hi!")
   }
   override def postStop() {
-    log.info("kid got stopped!")
+    log.info("child stopped!")
   }
 }
 
 
 object ActorsHierarchy extends App {
   val parent = ourSystem.actorOf(Props[ParentActor], "parent")
+  parent ! "create"
   parent ! "create"
   Thread.sleep(1000)
   parent ! "sayhi"
