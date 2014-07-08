@@ -87,13 +87,11 @@ class DictionaryActor extends Actor {
   private val dictionary = mutable.Set[String]()
   def receive = uninitialized
   def uninitialized: PartialFunction[Any, Unit] = {
-    case DictionaryActor.Init => // from /usr/share/dict/words 
-      val stream = getClass.getResourceAsStream("/org/learningconcurrency/words.txt")
+    case DictionaryActor.Init(path) =>
+      val stream = getClass.getResourceAsStream(path)
       val words = Source.fromInputStream(stream)
       for (w <- words.getLines) dictionary += w
       context.become(initialized)
-    case msg =>
-      log.info(s"Unknown message '$msg' - did you initialize me?")
   }
   def initialized: PartialFunction[Any, Unit] = {
     case DictionaryActor.IsWord(w) =>
@@ -103,13 +101,13 @@ class DictionaryActor extends Actor {
       context.become(uninitialized)
   }
   override def unhandled(msg: Any) = {
-    log.info("message $msg should not be sent in this state.")
+    log.info(s"message $msg should not be sent in this state.")
   }
 }
 
 
 object DictionaryActor {
-  case object Init
+  case class Init(path: String)
   case class IsWord(w: String)
   case object End
 }
@@ -119,7 +117,7 @@ object ActorsBecome extends App {
   val dict = ourSystem.actorOf(Props[DictionaryActor], "dictionary")
   dict ! DictionaryActor.IsWord("program")
   Thread.sleep(1000)
-  dict ! DictionaryActor.Init
+  dict ! DictionaryActor.Init("/org/learningconcurrency/words.txt") // or /usr/share/dict/words 
   Thread.sleep(1000)
   dict ! DictionaryActor.IsWord("program")
   Thread.sleep(1000)
@@ -128,8 +126,6 @@ object ActorsBecome extends App {
   dict ! DictionaryActor.End
   Thread.sleep(1000)
   dict ! DictionaryActor.IsWord("termination")
-  Thread.sleep(1000)
-  ourSystem.stop(dict)
   Thread.sleep(1000)
   ourSystem.shutdown()
 }
