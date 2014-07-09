@@ -179,11 +179,11 @@ class CheckActor extends Actor {
   def receive = {
     case path: String =>
       log.info(s"checking path $path")
-      context.actorSelection(path) ! Identify(7)
-    case ActorIdentity(7, Some(ref)) =>
-      log.info(s"found actor $ref")
-    case ActorIdentity(7, None) =>
-      log.info("could not find an actor")
+      context.actorSelection(path) ! Identify(path)
+    case ActorIdentity(path, Some(ref)) =>
+      log.info(s"found actor $ref on $path")
+    case ActorIdentity(path, None) =>
+      log.info(s"could not find an actor on $path")
   }
 }
 
