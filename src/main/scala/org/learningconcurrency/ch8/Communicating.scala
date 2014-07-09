@@ -6,8 +6,9 @@ package ch8
 import akka.actor._
 import akka.event.Logging
 import akka.util.Timeout
-import scala.concurrent.duration._
 import akka.pattern.{ask, pipe, gracefulStop}
+import akka.util.Timeout
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util._
 
@@ -58,17 +59,9 @@ object CommunicatingAsk extends App {
 }
 
 
-class Logger extends Actor {
-  val log = Logging(context.system, this)
-  def receive = {
-    case msg => log.info(s"got '$msg' from $sender")
-  }
-}
-
-
 class Router extends Actor {
   var i = 0
-  val children = for (_ <- 0 until 4) yield context.actorOf(Props[Logger])
+  val children = for (_ <- 0 until 4) yield context.actorOf(Props[StringPrinter])
   def receive = {
     case "stop" => context.stop(self)
     case msg =>
