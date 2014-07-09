@@ -206,7 +206,7 @@ object ActorsIdentify extends App {
 }
 
 
-class ExampleActor extends Actor {
+class LifecycleActor extends Actor {
   val log = Logging(context.system, this)
   var child: ActorRef = _
   def receive = {
@@ -220,7 +220,7 @@ class ExampleActor extends Actor {
     child = context.actorOf(Props[StringPrinter], "kiddo")
   }
   override def preRestart(reason: Throwable, msg: Option[Any]): Unit = {
-    log.info(s"about to restart because of $reason")
+    log.info(s"about to restart because of $reason, during message $msg")
     super.preRestart(reason, msg)
   }
   override def postRestart(reason: Throwable): Unit = {
@@ -242,18 +242,18 @@ class StringPrinter extends Actor {
 
 
 object ActorsLifecycle extends App {
-  val example = ourSystem.actorOf(Props[ExampleActor], "example")
-  example ! math.Pi
+  val testy = ourSystem.actorOf(Props[LifecycleActor], "testy")
+  testy ! math.Pi
   Thread.sleep(1000)
-  example ! 7
+  testy ! 7
   Thread.sleep(1000)
-  example ! "hi there!"
+  testy ! "hi there!"
   Thread.sleep(1000)
-  example ! Nil
+  testy ! Nil
   Thread.sleep(1000)
-  example ! "sorry about that"
+  testy ! "sorry about that"
   Thread.sleep(1000)
-  ourSystem.stop(example)
+  ourSystem.stop(testy)
   Thread.sleep(1000)
   ourSystem.shutdown()
 }
