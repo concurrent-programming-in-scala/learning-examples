@@ -5,27 +5,30 @@ package ch8
 
 import akka.actor._
 import akka.event.Logging
+import akka.pattern.pipe
 import akka.actor.SupervisorStrategy._
 import org.apache.commons.io.FileUtils
 import scala.io.Source
 import scala.collection._
+import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 
 
-class Victim extends Actor {
+class Naughty extends Actor {
   val log = Logging(context.system, this)
   def receive = {
-    case msg => log.info(s"got a message '$msg'")
+    case s: String => log.info(s)
+    case msg => throw new RuntimeException
   }
+  override def postRestart(t: Throwable) = log.info("naughty restarted")
 }
 
 
 class Supervisor extends Actor {
-  val child = context.actorOf(Props[Victim], "victim")
-  def receive = {
-    case "stop" => context.stop(self)
-  }
+  val child = context.actorOf(Props[Naughty], "victim")
+  def receive = PartialFunction.empty
   override val supervisorStrategy =
     OneForOneStrategy() {
       case ake: ActorKilledException => Restart
@@ -36,11 +39,11 @@ class Supervisor extends Actor {
 
 object SupervisionKill extends App {
   val s = ourSystem.actorOf(Props[Supervisor], "super")
-  Thread.sleep(1000)
   ourSystem.actorSelection("/user/super/*") ! Kill
   ourSystem.actorSelection("/user/super/*") ! "sorry about that"
+  ourSystem.actorSelection("/user/super/*") ! "kaboom".toList
   Thread.sleep(1000)
-  s ! "stop"
+  ourSystem.stop(s)
   Thread.sleep(1000)
   ourSystem.shutdown()
 }
@@ -81,9 +84,9 @@ class DownloadManager(val downloadSlots: Int) extends Actor {
       pendingWork.enqueue(msg)
       checkMoreDownloads()
     case DownloadManager.Finished(dest) =>
-      log.info(s"Download to '$dest' finished, ${downloaders.size} download slots left")
       workItems.remove(sender)
       downloaders.enqueue(sender)
+      log.info(s"Download to '$dest' finished, ${downloaders.size} download slots left")
       checkMoreDownloads()
   }
 
@@ -103,8 +106,6 @@ class DownloadManager(val downloadSlots: Int) extends Actor {
 object DownloadManager {
   case class Download(url: String, dest: String)
   case class Finished(dest: String)
-  case class ResourceNotFound(url: String) extends Exception
-  case class DestinationNotWriteable(filename: String) extends Exception
 }
 
 
@@ -112,12 +113,11 @@ object SupervisionDownloader extends App {
   import DownloadManager._
   val downloadManager = ourSystem.actorOf(Props(classOf[DownloadManager], 4), "manager")
   downloadManager ! Download("http://www.w3.org/Addressing/URL/url-spec.txt", "url-spec.txt")
-  downloadManager ! Download("http://www.scala-lang.org/misc/blues.mp3", "TheScalaBlues.mp3")
   Thread.sleep(1000)
-  downloadManager ! Download("https://github.com/scala/scala/blob/master/README.md", "SCALA-README.md")
+  downloadManager ! Download("https://github.com/scala/scala/blob/master/README.md", "README.md")
   Thread.sleep(5000)
   ourSystem.stop(downloadManager)
-  Thread.sleep(1000)
+  Thread.sleep(5000)
   ourSystem.shutdown()
 }
 
