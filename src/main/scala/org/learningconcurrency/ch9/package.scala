@@ -28,7 +28,7 @@ package ch9 {
       val modified = sdf.format(file.lastModified)
       val isDir = file.isDirectory
       val size = if (isDir) -1 else FileUtils.sizeOf(file)
-      FileInfo(path, name, parent, modified, isDir, size, Idle)
+      FileInfo(path, name, parent, modified, isDir, size, FileSystem.Idle)
     }
   }
 

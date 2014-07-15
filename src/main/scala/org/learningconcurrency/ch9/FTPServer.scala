@@ -5,9 +5,11 @@ package ch9
 
 import rx.lang.scala._
 import scala.collection._
+import scala.util.Try
 import scala.concurrent._
 import scala.concurrent.ExecutionContext.Implicits.global
 import akka.actor._
+import akka.pattern.pipe
 import akka.event.Logging
 import scala.concurrent.stm._
 import java.io._
@@ -79,6 +81,14 @@ class FTPServerActor(fileSystem: FileSystem) extends Actor {
       val filesMap = fileSystem.getFileList(dir)
       val files = filesMap.map(_._2).to[Seq]
       sender ! files
+    case DeleteFile(path) =>
+      val f = Future {
+        Try {
+          fileSystem.deleteFile(path)
+          path
+        }
+      }
+      f pipeTo sender
   }
 }
 

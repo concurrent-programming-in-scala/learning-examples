@@ -160,9 +160,17 @@ trait FTPClientApi {
     f.mapTo[Seq[FileInfo]].map(fs => (dir, fs))
   }
 
-  def copyFile(srcpath: String, destpath: String): Future[Unit] = ???
+  def copyFile(srcpath: String, destpath: String): Future[String] = {
+    ???
+  }
 
-  def deleteFile(srcpath: String): Future[Unit] = ???
+  def deleteFile(srcpath: String): Future[String] = {
+    val f = clientActor ? FTPServerActor.DeleteFile(srcpath)
+    f.mapTo[Try[String]].map {
+      case Success(s) => s
+      case Failure(t) => throw t
+    }
+  }
 
 }
 
@@ -213,6 +221,22 @@ trait FTPClientLogic {
     pane.pathBar.upButton.clicks.subscribe { _ =>
       pane.pathBar.filePath.text = pane.parent
       refreshPane(pane)
+    }
+    val rowDeletes = pane.buttons.deleteButton.clicks
+      .map(_ => pane.table.peer.getSelectedRow)
+      .filter(_ != -1)
+      .map(row => pane.dirFiles(row))
+    rowDeletes.subscribe { info =>
+      deleteFile(info.path) onComplete {
+        case Success(s) =>
+          swing {
+            status.label.text = s"File deleted: $s"
+            refreshPane(files.leftPane)
+            refreshPane(files.rightPane)
+          }
+        case Failure(t) =>
+          swing { status.label.text = s"Could not delete file: $t" }
+      }
     }
   }
 
