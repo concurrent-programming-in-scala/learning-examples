@@ -1,7 +1,9 @@
 package org.learningconcurrency
+package ch9
 
 
 
+import scala.collection._
 import scala.swing._
 import scala.swing.event._
 import javax.swing.table._
@@ -9,6 +11,7 @@ import javax.swing._
 import rx.lang.scala._
 import scala.concurrent._
 import scala.concurrent.ExecutionContext.Implicits.global
+import akka.actor._
 
 
 
@@ -81,12 +84,18 @@ abstract class FTPClientFrame extends MainFrame {
 }
 
 
-case class FileInfo(name: String, modified: String, size: Int)
-
-
 trait FTPClientApi {
   def getFileList(dir: String): Future[Seq[FileInfo]]
-  def copyFile(src: String, dest: String): Future[Unit]
+  //def copyFile(srcpath: String, destpath: String): Future[Unit]
+  //def deleteFile(srcpath: String): Future[Unit]
+  //def downloadFile(srcpath: String, destpath: String): Observable[Int]
+}
+
+
+trait FTPClientLogic {
+  self: FTPClientFrame with FTPClientLogic =>
+
+  
 }
 
 
@@ -101,6 +110,13 @@ object FTPClient extends SimpleSwingApplication {
   }
 
   def top = new FTPClientFrame {}
+
+  var serverUrl: String = ""
+
+  override def main(args: Array[String]) {
+    serverUrl = args(0)
+    super.main(args)
+  }
 
 }
 
