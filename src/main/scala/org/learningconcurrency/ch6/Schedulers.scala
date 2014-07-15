@@ -75,28 +75,6 @@ object SchedulersBrowser extends scala.swing.SimpleSwingApplication {
     size = new Dimension(1024, 768)
   }
 
-  implicit class ButtonOps(val self: Button) {
-    def clicks = Observable[Unit] { sub =>
-      self.reactions += {
-        case ButtonClicked(_) => sub.onNext(())
-      }
-    }
-  }
-
-  implicit class TextFieldOps(val self: TextField) {
-    def texts = Observable[String] { sub =>
-      self.reactions += {
-        case ValueChanged(_) => sub.onNext(self.text)
-      }
-    }
-  }
-
-  val swingScheduler = new Scheduler {
-    val asJavaScheduler = rx.schedulers.Schedulers.from(new Executor {
-      def execute(r: Runnable) = javax.swing.SwingUtilities.invokeLater(r)
-    })
-  }
-
   trait BrowserLogic {
     self: BrowserFrame =>
     

@@ -5,7 +5,6 @@ package ch8
 
 import akka.actor._
 import akka.event.Logging
-import akka.actor.{Identify, ActorIdentity}
 import scala.collection._
 
 

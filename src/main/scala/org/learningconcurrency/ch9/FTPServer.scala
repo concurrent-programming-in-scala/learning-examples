@@ -4,9 +4,11 @@ package ch9
 
 
 import rx.lang.scala._
+import scala.collection._
 import scala.concurrent._
 import scala.concurrent.ExecutionContext.Implicits.global
 import akka.actor._
+import akka.event.Logging
 import scala.concurrent.stm._
 import java.io._
 import org.apache.commons.io.FileUtils
@@ -27,7 +29,8 @@ class FileSystem(val rootpath: String) {
     val fileIterator = FileUtils.iterateFilesAndDirs(rootDir, all, all).asScala
     for (file <- fileIterator) {
       val info = FileInfo(file)
-      files(info.name) = info
+      //if (info.isDir && info.path.contains("src")) println(info)
+      files(info.path) = info
     }
   }
 
@@ -35,31 +38,56 @@ class FileSystem(val rootpath: String) {
     files.filter(_._2.parent == dir)
   }
 
-  def copyFile(srcpath: String, destpath: String): Unit = ???
+  def copyFile(srcpath: String, destpath: String): Unit = atomic { implicit txn =>
+    ???
+  }
 
-  def deleteFile(srcpath: String): Unit = ???
+  def deleteFile(srcpath: String): Unit = atomic { implicit txn =>
+    import FileSystem._
+    val info = files(srcpath)
+    info.state match {
+      case Copying(_) => sys.error("Cannot delete, file being copied.")
+      case Deleted => sys.error("File already being deleted.")
+      case Idle =>
+        files(srcpath) = info.copy(state = Deleted)
+        Txn.afterCommit { _ =>
+          FileUtils.forceDelete(info.toFile)
+          files.single.remove(srcpath)
+        }
+    }
+  }
 
-  def fileStream(srcpath: String): Unit = ???
+}
 
+
+object FileSystem {
+  sealed trait State
+  case object Idle extends State
+  case class Copying(n: Int) extends State
+  case object Deleted extends State
 }
 
 
 class FTPServerActor(fileSystem: FileSystem) extends Actor {
   import FTPServerActor._
 
+  val log = Logging(context.system, this)
+
   def receive = {
     case GetFileList(dir) =>
-      val files = fileSystem.getFileList(dir)
+      //println(fileSystem.files.snapshot.map(_._2).filter(_.isDir).filter(_.path.contains("src")).mkString("\n"))
+      val filesMap = fileSystem.getFileList(dir)
+      val files = filesMap.map(_._2).to[Seq]
       sender ! files
   }
 }
 
 
 object FTPServerActor {
-  case class GetFileList(dir: String)
-  case class CopyFile(srcpath: String, destpath: String)
-  case class DeleteFile(path: String)
-  case class DownloadFile(srcpath: String, destpath: String)
+  sealed trait Command
+  case class GetFileList(dir: String) extends Command
+  case class CopyFile(srcpath: String, destpath: String) extends Command
+  case class DeleteFile(path: String) extends Command
 
   def apply(fs: FileSystem) = Props(classOf[FTPServerActor], fs)
 }
@@ -71,6 +99,6 @@ object FTPServer extends App {
 
   val port = args(0).toInt
   val actorSystem = ch8.remotingSystem("FTPServerSystem", port)
-  val serverActor = actorSystem.actorOf(FTPServerActor(fileSystem))
+  val serverActor = actorSystem.actorOf(FTPServerActor(fileSystem), "server")
 }
 
