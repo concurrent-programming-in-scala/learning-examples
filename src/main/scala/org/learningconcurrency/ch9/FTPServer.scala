@@ -31,8 +31,8 @@ class FileSystem(val rootpath: String) {
     }
   }
 
-  def getFileList(path: String): Map[String, FileInfo] = atomic { implicit txn =>
-    files.filter(_._2.parent == path)
+  def getFileList(dir: String): Map[String, FileInfo] = atomic { implicit txn =>
+    files.filter(_._2.parent == dir)
   }
 
   def copyFile(srcpath: String, destpath: String): Unit = ???
@@ -48,15 +48,15 @@ class FTPServerActor(fileSystem: FileSystem) extends Actor {
   import FTPServerActor._
 
   def receive = {
-    case GetFileList(path) =>
-      val files = fileSystem.getFileList(path)
+    case GetFileList(dir) =>
+      val files = fileSystem.getFileList(dir)
       sender ! files
   }
 }
 
 
 object FTPServerActor {
-  case class GetFileList(path: String)
+  case class GetFileList(dir: String)
   case class CopyFile(srcpath: String, destpath: String)
   case class DeleteFile(path: String)
   case class DownloadFile(srcpath: String, destpath: String)

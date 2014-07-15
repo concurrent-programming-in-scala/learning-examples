@@ -84,18 +84,37 @@ abstract class FTPClientFrame extends MainFrame {
 }
 
 
+class FTPClientActor extends Actor {
+  import FTPServerActor._
+
+  def receive = {
+    case _ =>
+  }
+}
+
+
 trait FTPClientApi {
-  def getFileList(dir: String): Future[Seq[FileInfo]]
-  //def copyFile(srcpath: String, destpath: String): Future[Unit]
-  //def deleteFile(srcpath: String): Future[Unit]
-  //def downloadFile(srcpath: String, destpath: String): Observable[Int]
+
+  val system = ch8.remotingSystem("FTPClientSystem", 0)
+  val clientActor = system.actorOf(Props(classOf[FTPClientActor]))
+
+  def getFileList(dir: String): Future[Seq[FileInfo]] = {
+    ???
+  }
+
+  def copyFile(srcpath: String, destpath: String): Future[Unit] = ???
+
+  def deleteFile(srcpath: String): Future[Unit] = ???
+
+  def downloadFile(srcpath: String, destpath: String): Observable[Int] = ???
+
 }
 
 
 trait FTPClientLogic {
   self: FTPClientFrame with FTPClientLogic =>
 
-  
+
 }
 
 
@@ -109,7 +128,7 @@ object FTPClient extends SimpleSwingApplication {
       log(s"could not change look&feel: $e")
   }
 
-  def top = new FTPClientFrame {}
+  def top = new FTPClientFrame with FTPClientApi with FTPClientLogic
 
   var serverUrl: String = ""
 
