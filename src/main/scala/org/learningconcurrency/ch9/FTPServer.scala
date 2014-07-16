@@ -81,6 +81,12 @@ class FileSystem(val rootpath: String) {
     }
   }
 
+  def findFiles(regex: String): Seq[FileInfo] = {
+    val snapshot = files.single.snapshot
+    val infos = snapshot.values.toArray
+    infos.par.filter(_.path.matches(regex)).seq
+  }
+
 }
 
 
@@ -127,6 +133,10 @@ class FTPServerActor(fileSystem: FileSystem) extends Actor {
       Future {
         Try(fileSystem.deleteFile(path))
       } pipeTo sender
+    case FindFiles(regex) =>
+      Future {
+        Try(fileSystem.findFiles(regex))
+      } pipeTo sender
   }
 }
 
@@ -136,6 +146,7 @@ object FTPServerActor {
   case class GetFileList(dir: String) extends Command
   case class CopyFile(srcpath: String, destpath: String) extends Command
   case class DeleteFile(path: String) extends Command
+  case class FindFiles(regex: String) extends Command
 
   def apply(fs: FileSystem) = Props(classOf[FTPServerActor], fs)
 }
