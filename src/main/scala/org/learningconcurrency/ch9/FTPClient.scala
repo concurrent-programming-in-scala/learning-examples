@@ -145,7 +145,7 @@ class FTPClientActor(val serverUrl: String)(implicit val timeout: Timeout) exten
 
 
 object FTPClientActor {
-  case class Start
+  case object Start
 }
 
 

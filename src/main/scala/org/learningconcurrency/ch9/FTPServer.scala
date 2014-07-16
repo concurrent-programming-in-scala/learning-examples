@@ -171,3 +171,30 @@ object FTPServer extends App {
   }
 }
 
+
+object FTPServerBench extends App {
+  import org.scalameter._
+
+  val fileSystem = new FileSystem(".")
+  fileSystem.init()
+
+  val runningTime = config(
+    Key.exec.minWarmupRuns -> 100,
+    Key.exec.maxWarmupRuns -> 200,
+    Key.exec.benchRuns -> 1000,
+    Key.verbose -> true
+  ) withWarmer(new Warmer.Default) measure {
+    fileSystem.findFiles(".*ch5.*")
+  }
+
+  println("Running time: " + runningTime)
+
+}
+
+
+
+
+
+
+
+
