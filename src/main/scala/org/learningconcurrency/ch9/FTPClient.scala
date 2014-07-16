@@ -279,7 +279,7 @@ trait FTPClientLogic {
 
   menu.help.about.reactions += {
     case ButtonClicked(_) =>
-      Dialog.showMessage(message = "ScalaFTP version 0.1, brought to you by the ScalaTeam", title = "About ScalaFTP")
+      Dialog.showMessage(message = "ScalaFTP version 0.1, made in Switzerland", title = "About ScalaFTP")
   }
 
 }

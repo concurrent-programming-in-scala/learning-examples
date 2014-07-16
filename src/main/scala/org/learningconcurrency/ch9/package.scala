@@ -5,13 +5,9 @@ package org.learningconcurrency
 import java.io._
 import java.text.SimpleDateFormat
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.monitor._
+import rx.lang.scala._
 
-
-package object ch9 {
-
-  val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-
-}
 
 
 package ch9 {
@@ -42,5 +38,44 @@ package ch9 {
     }
   }
 
+  sealed trait FileEvent
+  case class FileCreated(path: String) extends FileEvent
+  case class FileDeleted(path: String) extends FileEvent
+  case class FileModified(path: String) extends FileEvent
+
 }
+
+
+package object ch9 {
+
+  val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+
+  def modifiedFiles(rootPath: String): Observable[FileEvent] = {
+    Observable.create { obs =>
+      val fileMonitor = new FileAlterationMonitor(1000)
+      val fileObs = new FileAlterationObserver(rootPath)
+      val fileLis = new FileAlterationListenerAdaptor {
+        override def onFileCreate(file: File) =
+          obs.onNext(FileCreated(file.getPath))
+        override def onFileChange(file: File) =
+          obs.onNext(FileModified(file.getPath))
+        override def onFileDelete(file: File) =
+          obs.onNext(FileDeleted(file.getPath))
+        override def onDirectoryCreate(file: File) =
+          obs.onNext(FileCreated(file.getPath))
+        override def onDirectoryChange(file: File) =
+          obs.onNext(FileModified(file.getPath))
+        override def onDirectoryDelete(file: File) =
+          obs.onNext(FileDeleted(file.getPath))
+      }
+      fileObs.addListener(fileLis)
+      fileMonitor.addObserver(fileObs)
+      fileMonitor.start()
+
+      Subscription { fileMonitor.stop() }
+    }
+  }
+
+}
+
 

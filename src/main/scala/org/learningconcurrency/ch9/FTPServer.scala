@@ -40,7 +40,7 @@ class FileSystem(val rootpath: String) {
     files.filter(_._2.parent == dir)
   }
 
-  def copyFile(srcpath: String, destpath: String): Unit = atomic { implicit txn =>
+  def copyFile(srcpath: String, destpath: String): String = atomic { implicit txn =>
     import FileSystem._
     val srcfile = new File(srcpath)
     val destfile = new File(destpath)
@@ -60,10 +60,11 @@ class FileSystem(val rootpath: String) {
             files(destpath) = FileInfo(destfile)
           }
         }
+        srcpath
     }
   }
 
-  def deleteFile(srcpath: String): Unit = atomic { implicit txn =>
+  def deleteFile(srcpath: String): String = atomic { implicit txn =>
     import FileSystem._
     val info = files(srcpath)
     info.state match {
@@ -76,6 +77,7 @@ class FileSystem(val rootpath: String) {
           FileUtils.forceDelete(info.toFile)
           files.single.remove(srcpath)
         }
+        srcpath
     }
   }
 
@@ -119,17 +121,11 @@ class FTPServerActor(fileSystem: FileSystem) extends Actor {
       sender ! files
     case CopyFile(srcpath, destpath) =>
       Future {
-        Try {
-          fileSystem.copyFile(srcpath, destpath)
-          srcpath
-        }
+        Try(fileSystem.copyFile(srcpath, destpath))
       } pipeTo sender
     case DeleteFile(path) =>
       Future {
-        Try {
-          fileSystem.deleteFile(path)
-          path
-        }
+        Try(fileSystem.deleteFile(path))
       } pipeTo sender
   }
 }
@@ -152,5 +148,15 @@ object FTPServer extends App {
   val port = args(0).toInt
   val actorSystem = ch8.remotingSystem("FTPServerSystem", port)
   val serverActor = actorSystem.actorOf(FTPServerActor(fileSystem), "server")
+  val fileEventSubscription = modifiedFiles(".").subscribe { event =>
+    event match {
+      case FileCreated(path) =>
+        fileSystem.files.single(path) = FileInfo(new File(path))
+      case FileDeleted(path) =>
+        fileSystem.files.single.remove(path)
+      case FileModified(path) =>
+        fileSystem.files.single(path) = FileInfo(new File(path))
+    }
+  }
 }
 
