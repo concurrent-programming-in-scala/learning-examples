@@ -68,6 +68,8 @@ abstract class FTPClientFrame extends MainFrame {
     var dirFiles: Seq[FileInfo] = Nil
 
     def table = scrollPane.fileTable
+
+    def currentPath = pathBar.filePath.text
   }
 
   object files extends GridPanel(1, 2) {
@@ -75,6 +77,10 @@ abstract class FTPClientFrame extends MainFrame {
     val rightPane = new FilePane
     contents += leftPane
     contents += rightPane
+
+    def opposite(pane: FilePane) = {
+      if (pane eq leftPane) rightPane else leftPane
+    }
   }
 
   object menu extends MenuBar {
@@ -161,7 +167,11 @@ trait FTPClientApi {
   }
 
   def copyFile(srcpath: String, destpath: String): Future[String] = {
-    ???
+    val f = clientActor ? FTPServerActor.CopyFile(srcpath, destpath)
+    f.mapTo[Try[String]].map {
+      case Success(s) => s
+      case Failure(t) => throw t
+    }
   }
 
   def deleteFile(srcpath: String): Future[String] = {
@@ -222,20 +232,37 @@ trait FTPClientLogic {
       pane.pathBar.filePath.text = pane.parent
       refreshPane(pane)
     }
-    val rowDeletes = pane.buttons.deleteButton.clicks
+
+    def rowActions(button: Button) = button.clicks
       .map(_ => pane.table.peer.getSelectedRow)
       .filter(_ != -1)
       .map(row => pane.dirFiles(row))
+    def setStatus(txt: String) = {
+      status.label.text = txt
+      refreshPane(files.leftPane)
+      refreshPane(files.rightPane)
+    }
+
+    val rowCopies = rowActions(pane.buttons.copyButton)
+      .map(info => (info, files.opposite(pane).currentPath))
+    rowCopies.subscribe { t =>
+      val (info, destDir) = t
+      val dest = destDir + File.separator + info.name
+      copyFile(info.path, dest) onComplete {
+        case Success(s) =>
+          swing { setStatus(s"File copied: $s") }
+        case Failure(t) =>
+          swing { setStatus(s"Could not copy file: $t")}
+      }
+    }
+
+    val rowDeletes = rowActions(pane.buttons.deleteButton)
     rowDeletes.subscribe { info =>
       deleteFile(info.path) onComplete {
         case Success(s) =>
-          swing {
-            status.label.text = s"File deleted: $s"
-            refreshPane(files.leftPane)
-            refreshPane(files.rightPane)
-          }
+          swing { setStatus(s"File deleted: $s") }
         case Failure(t) =>
-          swing { status.label.text = s"Could not delete file: $t" }
+          swing { setStatus(s"Could not delete file: $t") }
       }
     }
   }

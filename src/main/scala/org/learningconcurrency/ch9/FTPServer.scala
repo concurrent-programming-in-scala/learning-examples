@@ -41,15 +41,35 @@ class FileSystem(val rootpath: String) {
   }
 
   def copyFile(srcpath: String, destpath: String): Unit = atomic { implicit txn =>
-    ???
+    import FileSystem._
+    val srcfile = new File(srcpath)
+    val destfile = new File(destpath)
+    val info = files(srcpath)
+    if (files.contains(destpath)) sys.error(s"Destination $destpath already exists.")
+    info.state match {
+      case Created => sys.error(s"File $srcpath being created.")
+      case Deleted => sys.error(s"File $srcpath already deleted.")
+      case Idle | Copying(_) =>
+        files(srcpath) = info.copy(state = info.state.inc)
+        files(destpath) = FileInfo.creating(destfile, info.size)
+        Txn.afterCommit { _ =>
+          FileUtils.copyFile(srcfile, destfile)
+          atomic { implicit txn =>
+            val ninfo = files(srcpath)
+            files(srcpath) = ninfo.copy(state = ninfo.state.dec)
+            files(destpath) = FileInfo(destfile)
+          }
+        }
+    }
   }
 
   def deleteFile(srcpath: String): Unit = atomic { implicit txn =>
     import FileSystem._
     val info = files(srcpath)
     info.state match {
-      case Copying(_) => sys.error("Cannot delete, file being copied.")
-      case Deleted => sys.error("File already being deleted.")
+      case Created => sys.error(s"File $srcpath not yet created.")
+      case Copying(_) => sys.error(s"Cannot delete $srcpath, file being copied.")
+      case Deleted => sys.error(s"File $srcpath already being deleted.")
       case Idle =>
         files(srcpath) = info.copy(state = Deleted)
         Txn.afterCommit { _ =>
@@ -63,10 +83,26 @@ class FileSystem(val rootpath: String) {
 
 
 object FileSystem {
-  sealed trait State
-  case object Idle extends State
-  case class Copying(n: Int) extends State
-  case object Deleted extends State
+  sealed trait State {
+    def inc: State
+    def dec: State
+  }
+  case object Created extends State {
+    def inc = sys.error("File being created.")
+    def dec = sys.error("File being created.")
+  }
+  case object Idle extends State {
+    def inc = Copying(1)
+    def dec = sys.error("Idle not copied.")
+  }
+  case class Copying(n: Int) extends State {
+    def inc = Copying(n + 1)
+    def dec = if (n > 1) Copying(n - 1) else Idle
+  }
+  case object Deleted extends State {
+    def inc = sys.error("Cannot copy deleted.")
+    def dec = sys.error("Deleted not copied")
+  }
 }
 
 
@@ -81,14 +117,20 @@ class FTPServerActor(fileSystem: FileSystem) extends Actor {
       val filesMap = fileSystem.getFileList(dir)
       val files = filesMap.map(_._2).to[Seq]
       sender ! files
+    case CopyFile(srcpath, destpath) =>
+      Future {
+        Try {
+          fileSystem.copyFile(srcpath, destpath)
+          srcpath
+        }
+      } pipeTo sender
     case DeleteFile(path) =>
-      val f = Future {
+      Future {
         Try {
           fileSystem.deleteFile(path)
           path
         }
-      }
-      f pipeTo sender
+      } pipeTo sender
   }
 }
 

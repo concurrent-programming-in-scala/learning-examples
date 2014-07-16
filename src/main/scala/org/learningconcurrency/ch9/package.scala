@@ -9,6 +9,8 @@ import org.apache.commons.io.FileUtils
 
 package object ch9 {
 
+  val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
+
 }
 
 
@@ -24,11 +26,19 @@ package ch9 {
       val path = file.getPath
       val name = file.getName
       val parent = file.getParent
-      val sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-      val modified = sdf.format(file.lastModified)
+      val modified = dateFormat.format(file.lastModified)
       val isDir = file.isDirectory
       val size = if (isDir) -1 else FileUtils.sizeOf(file)
       FileInfo(path, name, parent, modified, isDir, size, FileSystem.Idle)
+    }
+
+    def creating(file: File, size: Long): FileInfo = {
+      val path = file.getPath
+      val name = file.getName
+      val parent = file.getParent
+      val modified = dateFormat.format(System.currentTimeMillis)
+      val isDir = false
+      FileInfo(path, name, parent, modified, isDir, size, FileSystem.Created)
     }
   }
 
