@@ -84,16 +84,16 @@ abstract class FTPClientFrame extends MainFrame {
   }
 
   object menu extends MenuBar {
-    val menuFileExit = new MenuItem("Exit ScalaFTP")
-    val menuFile = new Menu("File") {
-      contents += menuFileExit
+    object file extends Menu("File") {
+      val exit = new MenuItem("Exit ScalaFTP")
+      contents += exit
     }
-    val menuHelpAbout = new MenuItem("About...")
-    val menuHelp = new Menu("Help") {
-      contents += menuHelpAbout
+    object help extends Menu("Help") {
+      val about = new MenuItem("About...")
+      contents += about
     }
-    contents += menuFile
-    contents += menuHelp
+    contents += file
+    contents += help
   }
 
   object status extends BorderPanel {
@@ -269,6 +269,18 @@ trait FTPClientLogic {
 
   setupPane(files.leftPane)
   setupPane(files.rightPane)
+
+  menu.file.exit.reactions += {
+    case ButtonClicked(_) =>
+      system.stop(clientActor)
+      system.shutdown()
+      sys.exit(0)
+  }
+
+  menu.help.about.reactions += {
+    case ButtonClicked(_) =>
+      Dialog.showMessage(message = "ScalaFTP version 0.1, brought to you by the ScalaTeam", title = "About ScalaFTP")
+  }
 
 }
 
