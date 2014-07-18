@@ -40,6 +40,15 @@ class FileSystem(val rootpath: String) {
     files.filter(_._2.parent == dir)
   }
 
+  private def copyOnDisk(srcfile: File, destfile: File) = {
+    FileUtils.copyFile(srcfile, destfile)
+    atomic { implicit txn =>
+      val ninfo = files(srcfile.getPath)
+      files(srcfile.getPath) = ninfo.copy(state = ninfo.state.dec)
+      files(destfile.getPath) = FileInfo(destfile)
+    }
+  }
+
   def copyFile(srcpath: String, destpath: String): String = atomic { implicit txn =>
     import FileSystem._
     val srcfile = new File(srcpath)
@@ -52,14 +61,7 @@ class FileSystem(val rootpath: String) {
       case Idle | Copying(_) =>
         files(srcpath) = info.copy(state = info.state.inc)
         files(destpath) = FileInfo.creating(destfile, info.size)
-        Txn.afterCommit { _ =>
-          FileUtils.copyFile(srcfile, destfile)
-          atomic { implicit txn =>
-            val ninfo = files(srcpath)
-            files(srcpath) = ninfo.copy(state = ninfo.state.dec)
-            files(destpath) = FileInfo(destfile)
-          }
-        }
+        Txn.afterCommit { _ => copyOnDisk(srcfile, destfile) }
         srcpath
     }
   }
