@@ -111,12 +111,12 @@ abstract class FTPClientFrame extends MainFrame {
 }
 
 
-class FTPClientActor(val serverUrl: String)(implicit val timeout: Timeout) extends Actor {
+class FTPClientActor(implicit val timeout: Timeout) extends Actor {
   import FTPClientActor._
   import FTPServerActor._
 
   def unconnected: Actor.Receive = {
-    case Start =>
+    case Start(serverUrl) =>
       // connect to server
       val serverActorPath = s"akka.tcp://FTPServerSystem@$serverUrl/user/server"
       val serverActorSel = context.actorSelection(serverActorPath)
@@ -145,19 +145,19 @@ class FTPClientActor(val serverUrl: String)(implicit val timeout: Timeout) exten
 
 
 object FTPClientActor {
-  case object Start
+  case class Start(serverActorUrl: String)
 }
 
 
 trait FTPClientApi {
   implicit val timeout: Timeout = Timeout(4 seconds)
   val system = ch8.remotingSystem("FTPClientSystem", 0)
-  val clientActor = system.actorOf(Props(classOf[FTPClientActor], serverUrl, timeout))
+  val clientActor = system.actorOf(Props(classOf[FTPClientActor], timeout))
 
   def serverUrl: String
 
   val connected: Future[Boolean] = {
-    val f = clientActor ? FTPClientActor.Start
+    val f = clientActor ? FTPClientActor.Start(serverUrl)
     f.mapTo[Boolean]
   }
 
