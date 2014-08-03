@@ -33,3 +33,5 @@ libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.3.2"
 libraryDependencies += "com.storm-enroute" %% "scalameter-core" % "0.6"
 
 // libraryDependencies += "com.twitter" %% "finagle-http" % "6.2.0" // only enable with 2.10.4
+
+libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.0.6"

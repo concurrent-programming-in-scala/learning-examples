@@ -17,7 +17,27 @@ package ch4
 //     log(s"And the winner is: ${numbers.head}")
 //   }
 
+//   tombola onSuccess { numbers =>
+//     log(s"Once, more, the winner is: ${numbers.head}")
+//   }
+
 // }
 
 
+object Scalaz extends App {
+  import scalaz.concurrent._
+
+  val tombola = Future {
+    scala.util.Random.shuffle((0 until 10000).toVector)
+  }
+
+  tombola.runAsync { numbers =>
+    log(s"And the winner is: ${numbers.head}")
+  }
+
+  tombola.runAsync { numbers =>
+    log(s"... ahem, winner is: ${numbers.head}")
+  }
+
+}
 
