@@ -24,6 +24,26 @@ object CompositionSideEffects extends App {
 }
 
 
+object CompositionEscape extends App {
+  import scala.concurrent._
+  import ExecutionContext.Implicits.global
+  import scala.concurrent.stm._
+
+  val myValue = Ref(0)
+
+  atomic { implicit txn =>
+    Future {
+      Thread.sleep(500)
+      myValue() = myValue() + 1
+    } onComplete {
+      case t => println(t)
+    }
+  }
+
+  Thread.sleep(1000)
+}
+
+
 object CompositionCorrectSideEffect extends App {
   import scala.concurrent._
   import ExecutionContext.Implicits.global

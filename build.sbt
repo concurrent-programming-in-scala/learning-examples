@@ -4,6 +4,7 @@ name := "concurrency-examples"
 version := "1.0"
 
 scalaVersion := "2.11.1"
+// scalaVersion := "2.10.4"
 
 resolvers ++= Seq(
   "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
@@ -30,3 +31,5 @@ libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.3.2"
 libraryDependencies += "com.typesafe.akka" %% "akka-remote" % "2.3.2"
 
 libraryDependencies += "com.storm-enroute" %% "scalameter-core" % "0.6"
+
+// libraryDependencies += "com.twitter" %% "finagle-http" % "6.2.0" // only enable with 2.10.4
