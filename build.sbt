@@ -18,7 +18,7 @@ libraryDependencies += "commons-io" % "commons-io" % "2.4"
 
 libraryDependencies += "org.scala-lang.modules" %% "scala-async" % "0.9.1"
 
-libraryDependencies += "com.github.scala-blitz" %% "scala-blitz" % "1.1"
+libraryDependencies += "com.github.scala-blitz" %% "scala-blitz" % "1.2"
 
 libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.19.1"
 

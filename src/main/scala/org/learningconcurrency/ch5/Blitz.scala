@@ -29,4 +29,19 @@ object BlitzComparison extends App {
 }
 
 
+object BlitzHierarchy extends App {
+  val array = (0 until 100000).toArray
+  val range = 0 until 100000
+
+  def sum(xs: Zippable[Int]): Int = {
+    xs.reduce(_ + _)
+  }
+
+  println(sum(array.toPar))
+
+  println(sum(range.toPar))
+
+}
+
+
 
