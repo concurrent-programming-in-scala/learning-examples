@@ -35,3 +35,7 @@ libraryDependencies += "com.storm-enroute" %% "scalameter-core" % "0.6"
 // libraryDependencies += "com.twitter" %% "finagle-http" % "6.2.0" // only enable with 2.10.4
 
 libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.0.6"
+
+libraryDependencies += "com.typesafe.akka" %% "akka-stream-experimental" % "0.4"
+
+libraryDependencies += "com.storm-enroute" %% "reactive-collections" % "0.5"
