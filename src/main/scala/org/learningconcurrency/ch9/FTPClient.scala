@@ -95,7 +95,7 @@ abstract class FTPClientFrame extends MainFrame {
     contents += file
     contents += help
   }
-
+  
   object status extends BorderPanel {
     val label = new Label("connecting...", null, Alignment.Left)
     layout(new Label("Status: ")) = West
@@ -233,7 +233,7 @@ trait FTPClientLogic {
       refreshPane(pane)
     }
 
-    def rowActions(button: Button) = button.clicks
+    def rowActions(button: Button): Observable[FileInfo] = button.clicks
       .map(_ => pane.table.peer.getSelectedRow)
       .filter(_ != -1)
       .map(row => pane.dirFiles(row))
