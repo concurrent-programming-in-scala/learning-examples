@@ -50,7 +50,7 @@ package object ch9 {
 
   val dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
 
-  def modifiedFiles(rootPath: String): Observable[FileEvent] = {
+  def fileSystemEvents(rootPath: String): Observable[FileEvent] = {
     Observable.create { obs =>
       val fileMonitor = new FileAlterationMonitor(1000)
       val fileObs = new FileAlterationObserver(rootPath)

@@ -161,7 +161,7 @@ object FTPServer extends App {
   val port = args(0).toInt
   val actorSystem = ch8.remotingSystem("FTPServerSystem", port)
   val serverActor = actorSystem.actorOf(FTPServerActor(fileSystem), "server")
-  val fileEventSubscription = modifiedFiles(".").subscribe { event =>
+  val fileEventSubscription = fileSystemEvents(".").subscribe { event =>
     event match {
       case FileCreated(path) =>
         fileSystem.files.single(path) = FileInfo(new File(path))
