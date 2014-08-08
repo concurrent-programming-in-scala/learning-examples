@@ -1,5 +1,10 @@
+# intellij
+*.iml
+.idea
+
 # sbt output
 target
 SCALA-README.md
 url-spec.txt
+
 
