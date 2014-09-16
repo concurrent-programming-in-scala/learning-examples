@@ -6,6 +6,12 @@ package ch2
 
 
 
+object ThreadsMain extends App {
+  val name = Thread.currentThread.getName
+  println(s"I am the thread $name")
+}
+
+
 object ThreadsCreation extends App {
 
   class MyThread extends Thread {
