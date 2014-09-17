@@ -13,10 +13,10 @@ object AtomicUid extends App {
   def getUniqueId(): Long = uid.incrementAndGet()
 
   execute {
-    log(s"Got a unique id asynchronously: $getUniqueId")
+    log(s"Got a unique id asynchronously: ${getUniqueId()}")
   }
 
-  log(s"Got a unique id: $getUniqueId")
+  log(s"Got a unique id: ${getUniqueId()}")
 }
 
 
