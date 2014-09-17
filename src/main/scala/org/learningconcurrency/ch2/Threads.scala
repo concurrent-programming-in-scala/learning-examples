@@ -12,6 +12,19 @@ object ThreadsMain extends App {
 }
 
 
+object ThreadsStart extends App {
+  class MyThread extends Thread {
+    override def run(): Unit = {
+      println(s"I am ${Thread.currentThread.getName}")
+    }
+  }
+
+  val t = new MyThread()
+  t.start()
+  println(s"I am ${Thread.currentThread.getName}")
+}
+
+
 object ThreadsCreation extends App {
 
   class MyThread extends Thread {
