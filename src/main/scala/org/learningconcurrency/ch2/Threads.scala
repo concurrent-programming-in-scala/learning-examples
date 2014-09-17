@@ -101,26 +101,26 @@ object ThreadsUnprotectedUid extends App {
 
 
 object ThreadSharedStateAccessReordering extends App {
-  for (i <- 0 until 10000) {
-    var t1started = false
-    var t2started = false
-    var t1index = -1
-    var t2index = -1
+  for (i <- 0 until 100000) {
+    var a = false
+    var b = false
+    var x = -1
+    var y = -1
 
     val t1 = thread {
-      Thread.sleep(2)
-      t1started = true
-      t2index = if (t2started) 0 else 1
+      //Thread.sleep(2)
+      a = true
+      y = if (b) 0 else 1
     }
     val t2 = thread {
-      Thread.sleep(2)
-      t2started = true
-      t1index = if (t1started) 0 else 1
+      //Thread.sleep(2)
+      b = true
+      x = if (a) 0 else 1
     }
   
     t1.join()
     t2.join()
-    assert(!(t1index == 1 && t2index == 1), s"t1 = $t1index, t2 = $t2index")
+    assert(!(x == 1 && y == 1), s"x = $x, y = $y")
   }
 }
 
