@@ -182,7 +182,7 @@ object CollectionsTrieMapBulk extends App {
   names("Jill") = 0
 
   execute {
-    for (n <- 0 until 100) names(s"John $n") = n
+    for (n <- 10 until 100) names(s"John $n") = n
   }
 
   execute {

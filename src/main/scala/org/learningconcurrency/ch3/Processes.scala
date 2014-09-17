@@ -10,7 +10,7 @@ object ProcessRun extends App {
   import scala.sys.process._
 
   val command = "ls"
-  val exitcode = command !
+  val exitcode = command.!
 
   log(s"command exited with status $exitcode")
   
@@ -21,7 +21,7 @@ object ProcessLineCount extends App {
   import scala.sys.process._
 
   def lineCount(filename: String): Int = {
-    val output = s"wc $filename" !!
+    val output = s"wc $filename".!!
 
     output.trim.split(" ").head.toInt
   }
