@@ -54,7 +54,7 @@ object PromisesCustomAsync extends App {
   }
 
   val future = myFuture {
-    "naaa" + "na" * 8 + " Katamary Damacy!"
+    "naaa" + "na" * 8 + " Katamari Damacy!"
   }
 
   future onSuccess {
