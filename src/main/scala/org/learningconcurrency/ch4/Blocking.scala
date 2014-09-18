@@ -13,7 +13,7 @@ object BlockingAwait extends App {
   import scala.io.Source
 
   val urlSpecSizeFuture = Future { Source.fromURL("http://www.w3.org/Addressing/URL/url-spec.txt").size }
-  val urlSpecSize = Await.result(urlSpecSizeFuture, 10 seconds)
+  val urlSpecSize = Await.result(urlSpecSizeFuture, 10.seconds)
 
   log(s"url spec contains $urlSpecSize characters")
 
