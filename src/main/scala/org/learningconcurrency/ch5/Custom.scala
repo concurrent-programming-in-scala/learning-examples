@@ -7,7 +7,8 @@ import scala.collection.parallel._
 
 
 
-class ParString(val str: String) extends immutable.ParSeq[Char] {
+class ParString(val str: String)
+extends immutable.ParSeq[Char] {
   def apply(i: Int) = str.charAt(i)
   
   def length = str.length
@@ -15,12 +16,13 @@ class ParString(val str: String) extends immutable.ParSeq[Char] {
   def seq = new collection.immutable.WrappedString(str)
   
   def splitter = new ParStringSplitter(str, 0, str.length)
-    
+
+  override def newCombiner = new ParStringCombiner
+
 }
 
 
-class ParStringSplitter(private val s: String, private var i: Int, private val limit: Int)
-extends SeqSplitter[Char] {
+class ParStringSplitter(private val s: String, private var i: Int, private val limit: Int) extends SeqSplitter[Char] {
   final def hasNext = i < limit
   final def next = {
     val r = s.charAt(i)
@@ -46,6 +48,43 @@ extends SeqSplitter[Char] {
 }
 
 
+class ParStringCombiner extends Combiner[Char, ParString] {
+  import scala.collection.mutable.ArrayBuffer
+  private var sz = 0
+  private val chunks = new ArrayBuffer += new StringBuilder
+  private var lastc = chunks.last
+  
+  def size: Int = sz
+  
+  def +=(elem: Char): this.type = {
+    lastc += elem
+    sz += 1
+    this
+  }
+  
+  def clear = {
+    chunks.clear
+    chunks += new StringBuilder
+    lastc = chunks.last
+    sz = 0
+  }
+  
+  def result: ParString = {
+    val rsb = new StringBuilder
+    for (sb <- chunks) rsb.append(sb)
+    new ParString(rsb.toString)
+  }
+  
+  def combine[U <: Char, NewTo >: ParString](other: Combiner[U, NewTo]) = if (other eq this) this else {
+    val that = other.asInstanceOf[ParStringCombiner]
+    sz += that.sz
+    chunks ++= that.chunks
+    lastc = chunks.last
+    this
+  }
+}
+
+
 object CustomCharCount extends App {
   val txt = "A custom text " * 250000
   val partxt = new ParString(txt)
@@ -64,5 +103,23 @@ object CustomCharCount extends App {
 
 }
 
+
+object CustomCharFilter extends App {
+  val txt = "A custom txt" * 25000
+  val partxt = new ParString(txt)
+
+  val seqtime = warmedTimed(250) {
+    txt.filter(_ != ' ')
+  }
+  
+  log(s"Sequential time - $seqtime ms")
+
+  val partime = warmedTimed(250) {
+    partxt.filter(_ != ' ')
+  }
+
+  log(s"Parallel time   - $partime ms")
+
+}
 
 
