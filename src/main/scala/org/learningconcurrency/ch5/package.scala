@@ -6,9 +6,11 @@ package org.learningconcurrency
 
 
 package object ch5 {
+  @volatile var dummy: Any = _
+
   def timed[T](body: =>T): Double = {
     val start = System.nanoTime
-    body
+    dummy = body
     val end = System.nanoTime
     ((end - start) / 1000) / 1000.0
   }

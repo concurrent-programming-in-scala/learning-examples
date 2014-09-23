@@ -42,9 +42,10 @@ object ConcurrentCollections extends App {
   import ch4.FuturesCallbacks.getUrlSpec
 
   def intersection(a: GenSet[String], b: GenSet[String]): GenSet[String] = {
-    val result = new ConcurrentSkipListSet[String]
-    for (x <- a.par) if (b contains x) result.add(x)
-    result.asScala
+    val skiplist = new ConcurrentSkipListSet[String]
+    for (x <- a.par) if (b contains x) skiplist.add(x)
+    val result: Set[String] = skiplist.asScala
+    result
   }
 
   val ifut = for {
