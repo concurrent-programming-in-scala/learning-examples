@@ -20,7 +20,7 @@ object ObservablesTimer extends App {
   import rx.lang.scala._
   import scala.concurrent.duration._
 
-  val o = Observable.timer(1 second)
+  val o = Observable.timer(1.second)
   o.subscribe(_ => log(s"Timeout!"))
   o.subscribe(_ => log(s"Another timeout!"))
 }
