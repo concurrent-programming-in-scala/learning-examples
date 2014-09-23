@@ -17,7 +17,7 @@ object SubjectsOS extends App {
   }
 
   object TimeModule {
-    val systemClock = Observable.interval(1 seconds).map(t => s"systime: $t")
+    val systemClock = Observable.interval(1.seconds).map(t => s"systime: $t")
   }
 
   object FileSystemModule {
