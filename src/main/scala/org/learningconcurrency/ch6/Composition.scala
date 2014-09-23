@@ -10,7 +10,7 @@ object CompositionMapAndFilter extends App {
   import rx.lang.scala._
   import scala.concurrent.duration._
 
-  val odds = Observable.interval(0.5 seconds).filter(_ % 2 == 1).map(n => s"odd number $n").take(5)
+  val odds = Observable.interval(0.5.seconds).filter(_ % 2 == 1).map(n => s"odd number $n").take(5)
   odds.subscribe(log _, e => log(s"unexpected $e"), () => log("no more odds"))
 
   val evens = for (n <- Observable.from(0 until 9); if n % 2 == 0) yield s"even number $n"
@@ -35,7 +35,7 @@ object CompositionConcatAndFlatten extends App {
 
   def fetchQuoteObservable(): Observable[String] = Observable.from(fetchQuote())
 
-  def quotes: Observable[Observable[String]] = Observable.interval(0.5 seconds).take(5).map {
+  def quotes: Observable[Observable[String]] = Observable.interval(0.5.seconds).take(5).map {
     n => fetchQuoteObservable().map(txt => s"$n) $txt")
   }
   
@@ -50,7 +50,7 @@ object CompositionConcatAndFlatten extends App {
   Thread.sleep(6000)
 
   log(s"Now using flatMap")
-  Observable.interval(0.5 seconds).take(5).flatMap({
+  Observable.interval(0.5.seconds).take(5).flatMap({
     n => fetchQuoteObservable().map(txt => s"$n) $txt")
   }).subscribe(log _)
 
@@ -58,7 +58,7 @@ object CompositionConcatAndFlatten extends App {
 
   log(s"Now using good ol' for-comprehensions")
   val qs = for {
-    n   <- Observable.interval(0.5 seconds).take(5)
+    n   <- Observable.interval(0.5.seconds).take(5)
     txt <- fetchQuoteObservable()
   } yield s"$n) $txt"
   qs.subscribe(log _)

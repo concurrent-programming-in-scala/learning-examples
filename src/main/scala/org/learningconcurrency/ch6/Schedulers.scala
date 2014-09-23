@@ -81,12 +81,12 @@ object SchedulersBrowser extends scala.swing.SimpleSwingApplication {
     def suggestRequest(term: String): Observable[String] = {
       val url = s"http://suggestqueries.google.com/complete/search?client=firefox&q=$term"
       val request = Future { Source.fromURL(url).mkString }
-      Observable.from(request).timeout(0.5 seconds).onErrorResumeNext(Observable.items("(no suggestions)"))
+      Observable.from(request).timeout(0.5.seconds).onErrorResumeNext(Observable.items("(no suggestions)"))
     }
 
     def pageRequest(url: String): Observable[String] = {
       val request = Future { Source.fromURL(url).mkString }
-      Observable.from(request).timeout(4 seconds).onErrorResumeNext(t => Observable.items(s"Could not load page: $t"))
+      Observable.from(request).timeout(4.seconds).onErrorResumeNext(t => Observable.items(s"Could not load page: $t"))
     }
 
     termfield.texts.map(suggestRequest).concat.observeOn(swingScheduler).subscribe {

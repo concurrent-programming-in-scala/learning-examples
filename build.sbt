@@ -22,7 +22,7 @@ libraryDependencies += "com.github.scala-blitz" %% "scala-blitz" % "1.2"
 
 libraryDependencies += "com.netflix.rxjava" % "rxjava-scala" % "0.19.1"
 
-libraryDependencies += "org.scala-lang" % "scala-swing" % "2.11.0-M7"
+libraryDependencies += "org.scala-lang.modules" %% "scala-swing" % "1.0.1"
             
 libraryDependencies += "org.scala-stm" %% "scala-stm" % "0.7"
 
