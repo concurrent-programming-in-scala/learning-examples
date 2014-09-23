@@ -75,12 +75,13 @@ class ParStringCombiner extends Combiner[Char, ParString] {
     new ParString(rsb.toString)
   }
   
-  def combine[U <: Char, NewTo >: ParString](other: Combiner[U, NewTo]) = if (other eq this) this else {
-    val that = other.asInstanceOf[ParStringCombiner]
-    sz += that.sz
-    chunks ++= that.chunks
-    lastc = chunks.last
-    this
+  def combine[U <: Char, NewTo >: ParString](that: Combiner[U, NewTo]) =
+    if (that eq this) this else that match {
+      case that: ParStringCombiner =>
+        sz += that.sz
+        chunks ++= that.chunks
+        lastc = chunks.last
+        this
   }
 }
 
