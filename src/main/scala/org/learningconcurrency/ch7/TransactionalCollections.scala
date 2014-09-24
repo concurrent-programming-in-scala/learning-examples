@@ -19,17 +19,24 @@ object TransactionLocals extends App {
       myLog() = myLog() + "\nremoved " + lst.head().elem
       lst.head() = lst.head().next()
     }
-    myLog()
   }
 
   val myList = new TSortedList().insert(14).insert(22)
-  val f = Future { clearList(myList) }
-  val g = Future { clearList(myList) }
+  val f = Future {
+    atomic { implicit txn =>
+      clearList(myList) 
+      myLog()
+    }
+  }
+  val g = Future {
+    atomic { implicit txn =>
+      clearList(myList)
+      myLog()
+    }
+  }
   for (h1 <- f; h2 <- g) {
-  log(s"Log for f: $h1\nLog for g: $h2")
-
-}
-
+    log(s"Log for f: $h1\nLog for g: $h2")
+  }
 
 }
 
