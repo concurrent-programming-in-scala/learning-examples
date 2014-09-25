@@ -181,9 +181,9 @@ object Performance extends App {
   }
 
   val parLongAccTime = config(
-    Key.exec.minWarmupRuns -> 20,
-    Key.exec.maxWarmupRuns -> 40,
-    Key.exec.benchRuns -> 30,
+    Key.exec.minWarmupRuns -> 100,
+    Key.exec.maxWarmupRuns -> 200,
+    Key.exec.benchRuns -> 80,
     Key.verbose -> true
   ) withWarmer(new Warmer.Default) measure {
     val acc = new ParLongAccumulator(0L)(_ + _)
