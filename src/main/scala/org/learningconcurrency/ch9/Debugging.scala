@@ -175,7 +175,7 @@ object Performance extends App {
     }
     def apply(): Long = {
       var total = 0L
-      for (i <- 0 until values.length) total += values.get(i)
+      for (i <- 0 until values.length) total = op(total, values.get(i))
       total
     }
   }
