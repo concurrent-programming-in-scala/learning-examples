@@ -57,7 +57,7 @@ object ConcurrentCollections extends App {
     intersection(htmlWords, urlWords)
   }
 
-  ifut onSuccess { case i =>
+  ifut foreach { case i =>
     log(s"intersection = $i")
   }
 

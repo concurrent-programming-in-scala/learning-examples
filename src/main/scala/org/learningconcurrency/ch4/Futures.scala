@@ -54,12 +54,12 @@ object FuturesCallbacks extends App {
     case (line, n) if line.contains(word) => (n, line)
   } mkString("\n")
 
-  urlSpec onSuccess {
-    case lines => log(s"Found occurrences of 'telnet'\n${find(lines, "telnet")}\n")
+  urlSpec foreach {
+    lines => log(s"Found occurrences of 'telnet'\n${find(lines, "telnet")}\n")
   }
 
-  urlSpec onSuccess {
-    case lines => log(s"Found occurrences of 'password'\n${find(lines, "password")}\n")
+  urlSpec foreach {
+    lines => log(s"Found occurrences of 'password'\n${find(lines, "password")}\n")
   }
 
   log("callbacks installed, continuing with other work")
@@ -76,7 +76,7 @@ object FuturesFailure extends App {
     Source.fromURL("http://www.w3.org/non-existent-url-spec.txt").mkString
   }
 
-  urlSpec onFailure {
+  urlSpec.failed foreach {
     case t => log(s"exception occurred - $t")
   }
 }
@@ -89,11 +89,11 @@ object FuturesExceptions extends App {
 
   val file = Future { Source.fromFile(".gitignore-SAMPLE").getLines.mkString("\n") }
 
-  file onSuccess {
-    case text => log(text)
+  file foreach {
+    text => log(text)
   }
 
-  file onFailure {
+  file.failed foreach {
     case fnfe: java.io.FileNotFoundException => log(s"Cannot find file - $fnfe")
     case t => log(s"Failed due to $t")
   }
@@ -132,8 +132,8 @@ object FuturesNonFatal extends App {
 
   val f = Future { throw new InterruptedException }
   val g = Future { throw new IllegalArgumentException }
-  f onFailure { case t => log(s"error - $t") }
-  g onFailure { case t => log(s"error - $t") }
+  f.failed foreach { case t => log(s"error - $t") }
+  g.failed foreach { case t => log(s"error - $t") }
 }
 
 
@@ -160,7 +160,7 @@ object FuturesClumsyCallback extends App {
     } yield f.getCanonicalPath
   }
 
-  blacklistFile(".gitignore") onSuccess {
+  blacklistFile(".gitignore") foreach {
     case lines =>
       val files = findFiles(lines)
       log(s"matches: ${files.mkString("\n")}")
@@ -184,7 +184,7 @@ object FuturesMap extends App {
     case Success(line) => log(s"the longest line is '$line'")
   }
 
-  longestGitignoreLine onFailure {
+  longestGitignoreLine.failed foreach {
     case t => log(s"no longest line, because ${t.getMessage}")
   }
 }
@@ -203,7 +203,7 @@ object FuturesFlatMapRaw extends App {
     }
   }
 
-  answer onSuccess {
+  answer foreach {
     case contents => log(contents)
   }
 }
@@ -223,7 +223,7 @@ object FuturesFlatMap extends App {
     "First of all, read this: " + nettext + " Once you're done, try this: " + urltext
   }
 
-  answer onSuccess {
+  answer foreach {
     case contents => log(contents)
   }
 
@@ -242,7 +242,7 @@ object FuturesDifferentFlatMap extends App {
     "First of all, read this: " + nettext + " Once you're done, try this: " + urltext
   }
 
-  answer onSuccess {
+  answer foreach {
     case contents => log(contents)
   }
 
@@ -262,7 +262,7 @@ object FuturesRecover extends App {
       "can also point to regular files we keep on our servers."
   }
 
-  netiquette onSuccess {
+  netiquette foreach {
     case contents => log(contents)
   }
 
@@ -276,7 +276,7 @@ object FuturesReduce extends App {
   val squares = for (i <- 0 until 10) yield Future { i * i }
   val sumOfSquares = Future.reduce(squares)(_ + _)
 
-  sumOfSquares onSuccess {
+  sumOfSquares foreach {
     case sum => log(s"Sum of squares = $sum")
   }
 }

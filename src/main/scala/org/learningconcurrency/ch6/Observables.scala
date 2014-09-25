@@ -80,12 +80,12 @@ object ObservablesCreateFuture extends App {
   }
 
   val o = Observable.create[String] { obs =>
-    f onSuccess {
+    f foreach {
       case s =>
         obs.onNext(s)
         obs.onCompleted()
     }
-    f onFailure {
+    f.failed foreach {
       case t => obs.onError(t)
     }
     Subscription()

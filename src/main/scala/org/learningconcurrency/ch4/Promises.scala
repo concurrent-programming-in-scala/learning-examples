@@ -13,7 +13,7 @@ object PromisesCreate extends App {
   val p = Promise[String]
   val q = Promise[String]
 
-  p.future onSuccess {
+  p.future foreach {
     case text => log(s"Promise p succeeded with '$text'")
   }
 
@@ -25,7 +25,7 @@ object PromisesCreate extends App {
 
   q failure new Exception("not kept")
 
-  q.future onFailure {
+  q.future.failed foreach {
     case t => log(s"Promise q failed with $t")
   }
 
@@ -57,7 +57,7 @@ object PromisesCustomAsync extends App {
     "naaa" + "na" * 8 + " Katamari Damacy!"
   }
 
-  future onSuccess {
+  future foreach {
     case text => log(text)
   }
 
@@ -88,7 +88,7 @@ object PromisesAndCallbacks extends App {
     p.future
   }
 
-  fileCreated(".") onSuccess {
+  fileCreated(".") foreach {
     case filename => log(s"Detected new file '$filename'")
   }
 
@@ -110,7 +110,7 @@ object PromisesAndCustomOperations extends App {
 
   val f = Future { "now" } or Future { "later" }
 
-  f onSuccess {
+  f foreach {
     case when => log(s"The future is $when")
   }
 
@@ -138,7 +138,7 @@ object PromisesAndTimers extends App {
     "work completed!"
   }
 
-  f onSuccess {
+  f foreach {
     case text => log(text)
   }
 

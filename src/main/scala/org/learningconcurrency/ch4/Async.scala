@@ -15,8 +15,8 @@ object AsyncBasic extends App {
     Thread.currentThread.getName
   }
 
-  workerName onSuccess {
-    case name => log(s"Future completed by worker $name")
+  workerName foreach {
+    name => log(s"Future completed by worker $name")
   }
 
 }
@@ -39,8 +39,8 @@ object AsyncAwait extends App {
     """
   }
 
-  timetableFuture onSuccess {
-    case timetable => log(timetable)
+  timetableFuture foreach {
+    timetable => log(timetable)
   }
 
 }
@@ -80,8 +80,8 @@ object AsyncWhile extends App {
 
   countdown(10) { n =>
     log(s"T-minus $n seconds")
-  } onSuccess {
-    case _ => log(s"This program is over!")
+  } foreach {
+    _ => log(s"This program is over!")
   }
 
 }

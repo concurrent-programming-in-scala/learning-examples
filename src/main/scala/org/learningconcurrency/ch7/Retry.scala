@@ -96,7 +96,7 @@ object RetryTimeouts extends App {
         else retry
       }
     }
-  } onSuccess {
+  } foreach {
     case msg => log(msg)
   }
 

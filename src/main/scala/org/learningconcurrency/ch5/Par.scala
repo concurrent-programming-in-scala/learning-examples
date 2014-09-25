@@ -90,7 +90,7 @@ object ParHtmlSpecSearch extends App {
     try specSrc.getLines.toArray finally specSrc.close()
   }
 
-  getHtmlSpec() onSuccess { case specDoc =>
+  getHtmlSpec() foreach { case specDoc =>
     log(s"Download complete!")
 
     def search(d: GenSeq[String]) = warmedTimed() {
@@ -122,7 +122,7 @@ object ParNonParallelizableOperations extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
   import ParHtmlSpecSearch.getHtmlSpec
 
-  getHtmlSpec() onSuccess { case specDoc =>
+  getHtmlSpec() foreach { case specDoc =>
     def allMatches(d: GenSeq[String]) = warmedTimed() {
       val results = d.foldLeft("")((acc, line) => if (line.matches(".*TEXTAREA.*")) s"$acc\n$line" else acc)
       // Note: must use "aggregate" instead of "foldLeft"!
@@ -142,7 +142,7 @@ object ParNonDeterministicOperation extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
   import ParHtmlSpecSearch.getHtmlSpec
 
-  getHtmlSpec() onSuccess { case specDoc =>
+  getHtmlSpec() foreach { case specDoc =>
     val seqresult = specDoc.find(line => line.matches(".*TEXTAREA.*"))
     val parresult = specDoc.par.find(line => line.matches(".*TEXTAREA.*"))
     log(s"Sequential result - $seqresult")
@@ -184,7 +184,7 @@ object ParMultipleOperators extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
   import ParHtmlSpecSearch.getHtmlSpec
 
-  getHtmlSpec() onSuccess { case specDoc =>
+  getHtmlSpec() foreach { case specDoc =>
     val length = specDoc.aggregate(0)(
       (count: Int, line: String) => count + line.length,
       (count1: Int, count2: Int) => count1 + count2

@@ -56,7 +56,7 @@ object Correctness extends App {
       val total = accu()
       p.trySuccess(total)
     })
-    for (f <- fs) f onSuccess { case v =>
+    for (f <- fs) f foreach { case v =>
       accu.add(v)
       latch.count()
     }
@@ -65,7 +65,7 @@ object Correctness extends App {
 
   val fs = for (i <- 0 until 5) yield Future { i }
   val folded = fold(fs)(0)(_ + _)
-  folded onSuccess { case v => log(s"folded: $v") }
+  folded foreach { case v => log(s"folded: $v") }
 
 }
 

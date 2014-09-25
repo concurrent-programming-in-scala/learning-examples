@@ -188,16 +188,16 @@ object CompositionExceptions extends App {
   lst.insert(1)
   lst.insert(16)
 
-  Future { pop(lst, 2) } onSuccess { case _ => log(s"removed 2 elements - $lst") }
+  Future { pop(lst, 2) } foreach { case _ => log(s"removed 2 elements - $lst") }
   Thread.sleep(1000)
-  Future { pop(lst, 3) } onFailure { case t => log(s"oops $t - $lst") }
+  Future { pop(lst, 3) }.failed foreach { case t => log(s"oops $t - $lst") }
   Thread.sleep(1000)
   Future {
     atomic { implicit txn =>
       pop(lst, 1)
       sys.error("")
     }
-  } onFailure { case t => log(s"oops again $t - $lst") }
+  }.failed foreach { case t => log(s"oops again $t - $lst") }
   Thread.sleep(1000)
 
   import scala.util.control.Breaks._
