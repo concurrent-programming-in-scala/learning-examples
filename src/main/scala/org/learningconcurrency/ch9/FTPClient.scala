@@ -116,9 +116,9 @@ class FTPClientActor(implicit val timeout: Timeout) extends Actor {
   import FTPServerActor._
 
   def unconnected: Actor.Receive = {
-    case Start(serverUrl) =>
+    case Start(host) =>
       // connect to server
-      val serverActorPath = s"akka.tcp://FTPServerSystem@$serverUrl/user/server"
+      val serverActorPath = s"akka.tcp://FTPServerSystem@$host/user/server"
       val serverActorSel = context.actorSelection(serverActorPath)
       serverActorSel ! Identify(())
       context.become(connecting(sender))
@@ -154,10 +154,10 @@ trait FTPClientApi {
   val system = ch8.remotingSystem("FTPClientSystem", 0)
   val clientActor = system.actorOf(Props(classOf[FTPClientActor], timeout))
 
-  def serverUrl: String
+  def host: String
 
   val connected: Future[Boolean] = {
-    val f = clientActor ? FTPClientActor.Start(serverUrl)
+    val f = clientActor ? FTPClientActor.Start(host)
     f.mapTo[Boolean]
   }
 
@@ -296,13 +296,13 @@ object FTPClient extends SimpleSwingApplication {
   }
 
   def top = new FTPClientFrame with FTPClientApi with FTPClientLogic {
-    def serverUrl = serverUrlArg
+    def host = hostArg
   }
 
-  var serverUrlArg: String = ""
+  var hostArg: String = ""
 
   override def main(args: Array[String]) {
-    serverUrlArg = args(0)
+    hostArg = args(0)
     super.main(args)
   }
 

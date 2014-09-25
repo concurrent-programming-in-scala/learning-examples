@@ -232,7 +232,29 @@ object CompositionExceptions extends App {
 }
 
 
+object CompositionCatchingExceptions extends App {
+  import scala.concurrent.stm._
+  import CompositionSortedList._
+  import CompositionExceptions.pop
 
+  val lst = new TSortedList
+  lst.insert(4)
+  lst.insert(9)
+  lst.insert(1)
+  lst.insert(16)
+
+  atomic { implicit txn =>
+    // note - a failed nested transaction executes the top-level `afterRollback` callback!
+    // Txn.afterRollback { _ => log(s"afterRollback") }
+    pop(lst, 2)
+    log(s"lst = $lst")
+    try { pop(lst, 3) }
+    catch { case e: Exception => log(s"Houston... $e!") }
+    pop(lst, 1)
+  }
+
+  log(s"result - $lst")
+}
 
 
 
