@@ -110,7 +110,7 @@ object GracefulPingy {
 
 object CommunicatingGracefulStop extends App {
   val grace = ourSystem.actorOf(Props[GracefulPingy], "grace")
-  val stopped = gracefulStop(grace, 3 seconds, GracefulPingy.CustomShutdown)
+  val stopped = gracefulStop(grace, 3.seconds, GracefulPingy.CustomShutdown)
   stopped onComplete {
     case Success(x) =>
       log("graceful shutdown successful")
