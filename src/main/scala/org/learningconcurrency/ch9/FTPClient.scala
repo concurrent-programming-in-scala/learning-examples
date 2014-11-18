@@ -303,8 +303,9 @@ object FTPClient extends SimpleSwingApplication {
 
   override def main(args: Array[String]) {
     hostArg = if (args.length > 0) args(0) else {
-      println("usage (from sbt): run <ftp-server-url>")
-      println("or:               runMain org.learningconcurrency.ch9.FTPClient <ftp-server-url>")
+      println("usage (from sbt):")
+      println("    run <ftp-server-url>")
+      println("    runMain org.learningconcurrency.ch9.FTPClient <ftp-server-url>")
       sys.exit(1)
     }
     super.main(args)
