@@ -3,6 +3,7 @@ package org.learningconcurrency.exercises
 object CH1Solutions extends App{
 
   def compose[A, B, C](g: B => C, f: A => B): A => C = g compose f
+  // Alternative solutioin:                          = x => g(f(x))
 
   def fuse[A, B](a: Option[A], b: Option[B]): Option[(A, B)] = for {
     aVal <- a
@@ -13,7 +14,7 @@ object CH1Solutions extends App{
     try {
       pred(x)
     } catch { 
-      case _:Exception => false
+      case _: Exception => false
     }
   )
 

@@ -1,5 +1,8 @@
 package org.learningconcurrency.exercises
 
+import org.learningconcurrency.ch2.thread
+
+
 object CH2Solutions extends App{
 
   def parallel[A, B](a: =>A, b: =>B): (A, B) = {
@@ -23,11 +26,16 @@ object CH2Solutions extends App{
   }
 
   def periodically(duration: Long)(f: () => Unit): Unit = {
-    for (i <- 1 to 3){
-      thread {
-        f()
-        Thread.sleep(duration)
-      }.join()
+      val worker = new Thread {
+        while(true){
+          f()
+          Thread.sleep(duration)
+        }
+      }
+
+      worker.setName("Worker")
+      worker.setDaemon(true)
+      worker.start()
     }
   }
 
