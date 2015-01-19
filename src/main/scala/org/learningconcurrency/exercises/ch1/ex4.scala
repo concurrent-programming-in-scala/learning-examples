@@ -17,6 +17,7 @@ object Ex4a extends App {
 
 }
 
+
 // for those who consider the same characters the same elements
 object Ex4b extends App {
 
@@ -33,6 +34,7 @@ object Ex4b extends App {
   println(permutations("abba"))
 
 }
+
 
 // for those who in love with the standard library :)
 object Ex4c extends App {
