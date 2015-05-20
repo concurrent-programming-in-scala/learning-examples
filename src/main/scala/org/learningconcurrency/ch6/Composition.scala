@@ -75,7 +75,7 @@ object CompositionRetry extends App {
   import scala.io.Source
   import Observable._
 
-  def randomQuote = Observable.create[String] { obs =>
+  def randomQuote = Observable.apply[String] { obs =>
     val url = "http://www.iheartquotes.com/api/v1/random?" +
       "show_permalink=false&show_source=false"
     obs.onNext(Source.fromURL(url).getLines.mkString)

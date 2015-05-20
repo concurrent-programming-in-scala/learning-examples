@@ -54,7 +54,7 @@ object ObservablesLifetime extends App {
 object ObservablesCreate extends App {
   import rx.lang.scala._
 
-  val vms = Observable.create[String] { obs =>
+  val vms = Observable.apply[String] { obs =>
     obs.onNext("JVM")
     obs.onNext(".NET")
     obs.onNext("DartVM")
@@ -79,7 +79,7 @@ object ObservablesCreateFuture extends App {
     "Back to the Future(s)"
   }
 
-  val o = Observable.create[String] { obs =>
+  val o = Observable.apply[String] { obs =>
     f foreach {
       case s =>
         obs.onNext(s)
@@ -127,7 +127,7 @@ object ObservablesSubscriptions extends App {
   import org.apache.commons.io.monitor._
 
   def modifiedFiles(directory: String): Observable[String] = {
-    Observable.create { observer =>
+    Observable.apply { observer =>
       val fileMonitor = new FileAlterationMonitor(1000)
       val fileObs = new FileAlterationObserver(directory)
       val fileLis = new FileAlterationListenerAdaptor {
@@ -165,7 +165,7 @@ object ObservablesHot extends App {
   def modifiedFiles(directory: String): Observable[String] = {
     val fileObs = new FileAlterationObserver(directory)
     fileMonitor.addObserver(fileObs)
-    Observable.create { observer =>
+    Observable.apply { observer =>
       val fileLis = new FileAlterationListenerAdaptor {
         override def onFileChange(file: java.io.File) {
           observer.onNext(file.getName)

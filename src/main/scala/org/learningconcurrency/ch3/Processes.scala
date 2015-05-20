@@ -44,7 +44,7 @@ object ProcessList extends App {
   import scala.sys.process._
 
   def processes(): Stream[(Int, String)] = {
-    val proclines = "ps -A".lines_!
+    val proclines = "ps -A".lineStream_!
     proclines.tail map { line =>
       val parts = line.trim.split(" ")
       (parts.head.toInt, parts.last)
@@ -64,7 +64,7 @@ object ProcessList extends App {
 object ProcessFiles extends App {
   import scala.sys.process._
 
-  def files(pattern: String): Stream[String] = s"find /home/ -name $pattern".lines_!
+  def files(pattern: String): Stream[String] = s"find /home/ -name $pattern".lineStream_!
 
   for (file <- files("scala")) log(s"found - $file")
 }
@@ -76,7 +76,7 @@ object ProcessPipelining extends App {
   case class ProcessInfo(pid: Int, name: String)
 
   def processes(pattern: String): Stream[ProcessInfo] = {
-    val proclines = "ps -A" #| s"grep $pattern" lines_!;
+    val proclines = "ps -A" #| s"grep $pattern" lineStream_!;
     proclines map { line =>
       val parts = line.trim.split(" ")
       ProcessInfo(parts.head.toInt, parts.last)
