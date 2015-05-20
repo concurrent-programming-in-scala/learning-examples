@@ -128,7 +128,7 @@ object PromisesAndTimers extends App {
   def timeout(millis: Long): Future[Unit] = {
     val p = Promise[Unit]
     timer.schedule(new TimerTask {
-      def run() = p success ()
+      def run() = p.success(())
     }, millis)
     p.future
   }
@@ -173,7 +173,7 @@ object PromisesCancellation extends App {
 
   Thread.sleep(1500)
 
-  cancel trySuccess ()
+  cancel.trySuccess(())
 
   log("computation cancelled!")
 }
