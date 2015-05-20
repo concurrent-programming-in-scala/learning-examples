@@ -21,6 +21,8 @@ object CollectionsBad extends App {
 }
 
 
+/*
+// This example is not in the book.
 object CollectionsSynchronized extends App {
   import scala.collection._
 
@@ -39,6 +41,7 @@ object CollectionsSynchronized extends App {
   }
 
 }
+*/
 
 
 object MiscSyncVars extends App {
