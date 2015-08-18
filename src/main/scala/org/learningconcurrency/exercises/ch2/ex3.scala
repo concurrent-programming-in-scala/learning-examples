@@ -14,7 +14,9 @@ object Ex3 extends App {
       if (empty) throw new Exception("must be non-empty")
       else {
         empty = true
-        x
+        val v = x
+        x = null.asInstanceOf[T]
+        v
       }
     }
 
