@@ -9,22 +9,22 @@ object Ex6 extends App {
 
   class SyncQueue[T](val n:Int) {
 
-    private var qX = Queue[T]()
+    private var syncQueue = Queue[T]()
 
     def getWait():T = this.synchronized {
-      while (qX.isEmpty) {
+      while (syncQueue.isEmpty) {
         this.notify
         this.wait
       }
 
-      qX.dequeue
+      syncQueue.dequeue
     }
 
     def putWait(x: T): Unit = this.synchronized {
-      while (qX.length == n)
+      while (syncQueue.length == n)
         this.wait()
 
-      qX += x
+      syncQueue += x
       this.notify()
     }
 
