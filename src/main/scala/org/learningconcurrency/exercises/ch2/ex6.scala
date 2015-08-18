@@ -17,7 +17,9 @@ object Ex6 extends App {
         this.wait
       }
 
-      syncQueue.dequeue
+      val x = syncQueue.dequeue
+      this.notify()
+      x
     }
 
     def putWait(x: T): Unit = this.synchronized {
