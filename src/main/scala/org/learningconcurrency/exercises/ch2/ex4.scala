@@ -38,34 +38,25 @@ object Ex4 extends App {
 
   import org.learningconcurrency.ch2.thread
 
-  val lock = new AnyRef
-
   val syncVar = new SyncVar[Int]
 
   val producer = thread {
     var x = 0
-    while(x < 15) {
-
-      lock.synchronized {
-        if (syncVar.isEmpty) {
-          syncVar.put(x)
-          x = x + 1
-        }
-        lock.wait
+    while (x < 15) {
+      if (syncVar.isEmpty) {
+        syncVar.put(x)
+        x = x + 1
       }
 
     }
   }
 
   val consumer = thread {
-    var x = -1
-    while(x < 14) {
-      lock.synchronized {
-        if (syncVar.nonEmpty) {
-          x = syncVar.get
-          log(s"get = $x")
-        }
-        lock.notify
+    var x = 0
+    while (x != 15) {
+      if (syncVar.nonEmpty) {
+        log(s"get = ${syncVar.get}")
+        x = x + 1
       }
     }
   }
