@@ -15,7 +15,7 @@ object Ex8 extends App {
 
     def asynchronous(priority: Int)(task: => Unit):Unit = tasks synchronized {
       tasks.enqueue((priority,() => task))
-      tasks.notify
+      tasks.notify()
     }
 
 
