@@ -26,9 +26,13 @@ object Ex4 extends App {
       }
     }
 
-    def isEmpty = empty
+    def isEmpty = synchronized {
+      empty
+    }
 
-    def nonEmpty = !empty
+    def nonEmpty = synchronized {
+      !empty
+    }
 
   }
 
