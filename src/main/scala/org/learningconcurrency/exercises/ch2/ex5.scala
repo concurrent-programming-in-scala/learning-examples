@@ -10,9 +10,13 @@ object Ex5 extends App {
 
     private var x: T = null.asInstanceOf[T]
 
-    def isEmpty = empty
+    def isEmpty = synchronized {
+      empty
+    }
 
-    def nonEmpty = !empty
+    def nonEmpty = synchronized {
+      !empty
+    }
 
     def getWait():T = this.synchronized {
       while (empty)
