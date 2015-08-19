@@ -13,8 +13,7 @@ object Ex6 extends App {
 
     def getWait():T = this.synchronized {
       while (syncQueue.isEmpty) {
-        this.notify
-        this.wait
+        this.wait()
       }
 
       val x = syncQueue.dequeue
@@ -47,7 +46,7 @@ object Ex6 extends App {
   val consumer = thread {
     var x = -1
     while(x < 14) {
-      x = syncVar.getWait
+      x = syncVar.getWait()
       log(s"get: $x")
     }
   }
