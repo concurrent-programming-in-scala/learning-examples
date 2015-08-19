@@ -18,12 +18,19 @@ object Ex7 extends App {
       a2.money += n
     }
 
-    a1.synchronized {
+    if (a1.uid < a2.uid) {
+      a1.synchronized {
+        a2.synchronized {
+          adjust()
+        }
+      }
+    } else {
       a2.synchronized {
-        adjust()
+        a1.synchronized {
+          adjust()
+        }
       }
     }
-
   }
 
   def sendAll(accounts: Set[Account], target: Account):Unit = {
