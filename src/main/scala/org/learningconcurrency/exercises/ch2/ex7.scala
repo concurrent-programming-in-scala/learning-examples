@@ -31,7 +31,6 @@ object Ex7 extends App {
       send(a,target,a.money)
     } ).foreach(_.join)
 
-    //accounts.foreach((a) => send(a,target,a.money))
   }
 
   val accounts = (1 to 100).map((i) => new Account(s"Account: $i",i*10)).toSet
