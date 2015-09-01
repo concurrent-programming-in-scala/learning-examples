@@ -14,19 +14,23 @@ package ch3
 
 import java.util.concurrent.atomic.AtomicReference
 
+import scala.annotation.tailrec
+
 object Ex2 extends App {
 
   class TreiberStack[T] {
 
     var r = new AtomicReference[List[T]](List.empty[T])
 
-    def push(x: T): Unit = {
+    @tailrec
+    final def push(x: T): Unit = {
       val oldList = r.get
       val newList = x::oldList
       if (!r.compareAndSet(oldList,newList)) push(x)
     }
 
-    def pop(): T = {
+    @tailrec
+    final def pop(): T = {
       val oldList = r.get
       val newList = oldList.tail
       if (r.compareAndSet(oldList,newList)) oldList.head

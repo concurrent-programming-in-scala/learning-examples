@@ -4,6 +4,8 @@ package ch3
 
 import java.util.concurrent.atomic.AtomicReference
 
+import scala.annotation.tailrec
+
 /**
  * Implement a PureLazyCell class with the same interface and semantics as the LazyCell class from the previous exercise.
  * The PureLazyCell class assumes that the initialization parameter does not cause side effects,
@@ -17,7 +19,8 @@ object Ex6 extends App {
 
     val r = new AtomicReference[Option[T]](None)
 
-    def apply(): T = r.get match {
+    @tailrec
+    final def apply(): T = r.get match {
       case Some(v) => v
       case None => {
         val v = initialization
