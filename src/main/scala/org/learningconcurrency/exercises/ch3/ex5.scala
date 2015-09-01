@@ -23,6 +23,7 @@ object Ex5 extends App {
 
   class LazyCell[T](initialization: => T) {
 
+    @volatile
     var r: Option[T] = None
 
     def apply(): T = r match {
