@@ -2,18 +2,19 @@ package org.learningconcurrency
 package exercises
 package ch3
 
-import java.util.ConcurrentModificationException
 import java.util.concurrent.atomic.AtomicReference
 
 import org.learningconcurrency.ch2._
+
+import scala.annotation.tailrec
 
 /**
  * Implement a ConcurrentSortedList class, which implements a concurrent
  *
  * class ConcurrentSortedList[T](implicit val ord: Ordering[T]) {
- *   def add(x: T): Unit = ???
- *     def iterator: Iterator[T] = ???
- *   }
+ * def add(x: T): Unit = ???
+ * def iterator: Iterator[T] = ???
+ * }
  *
  * Under the hood, the ConcurrentSortedList class should use a linked list of atomic references.
  * Ensure that your implementation is lock-free and avoids ABA problems.
@@ -30,40 +31,59 @@ object Ex3_4 extends App {
 
   class ConcurrentSortedList[T](implicit val ord: Ordering[T]) {
 
-    val r = new AtomicReference[List[T]](List.empty[T])
+    private val h: AtomicReference[Option[T]] = new AtomicReference[Option[T]](None)
+    private val t: AtomicReference[Option[ConcurrentSortedList[T]]] = new AtomicReference[Option[ConcurrentSortedList[T]]](None)
 
-    def addWithSort(x:T,l:List[T]):List[T] = l match {
-      case h::_ if ord.compare(h,x) >= 0 => x::l
-      case h::t => h::addWithSort(x,t)
-      case _ => List(x)
+    @tailrec
+    private def addToTail(x: T): Unit = {
+      val v = t.get
+      v match {
+        case Some(p) => p.add(x)
+        case None => {
+          val l = new ConcurrentSortedList[T]
+          l.h.set(Some(x))
+          if (!t.compareAndSet(v, Some(l))) addToTail(x)
+        }
+      }
     }
 
-    def add(x: T): Unit = {
-      val oldList = r.get
-      val newList = addWithSort(x,oldList)
+    @tailrec
+    final def add(x: T): Unit = {
+      val optV = h.get
 
-      if (!r.compareAndSet(oldList,newList)) add(x)
+      optV match {
+        case Some(v) => {
+          if (ord.compare(v, x) >= 0) {
+            if (h.compareAndSet(optV, Some(x))) addToTail(v)
+            else add(x)
+          } else addToTail(x)
+        }
+        case None => {
+          if (!h.compareAndSet(optV, Some(x)))
+            add(x)
+        }
+      }
     }
 
     def iterator: Iterator[T] = new Iterator[T] {
 
-      val rIter = new AtomicReference(r.get)
+      var rIter: Option[ConcurrentSortedList[T]] = Some(ConcurrentSortedList.this)
 
-      override def hasNext: Boolean = {
-        !rIter.get.isEmpty
-      }
+      override def hasNext: Boolean = rIter.isEmpty == false
 
       override def next(): T = {
-        val l = rIter.get
 
-        if (l.isEmpty) throw new NoSuchElementException("next on empty iterator")
-
-        if (!rIter.compareAndSet(l,l.tail))
-          throw new ConcurrentModificationException()
-
-        l.head
+        rIter match {
+          case Some(r) => {
+            rIter = r.t.get
+            r.h.get match {
+              case Some(v) => v
+              case None => throw new NoSuchElementException("next on empty iterator")
+            }
+          }
+          case None => throw new NoSuchElementException("next on empty iterator")
+        }
       }
-
     }
 
   }
@@ -72,11 +92,13 @@ object Ex3_4 extends App {
 
 
   (1 to 10).map((i) => thread {
+    Thread.sleep((Math.random() * 100).toInt)
     for (i <- 1 to 10)
       csl.add((math.random * 100 + i).toInt)
-      Thread.sleep(1)
-    }
+  }
   ).foreach(_.join)
+
+  log(s"length = ${csl.iterator.length}")
 
   for (a <- csl.iterator) {
     log(a.toString)
