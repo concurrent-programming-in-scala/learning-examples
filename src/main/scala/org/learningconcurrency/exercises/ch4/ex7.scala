@@ -53,7 +53,13 @@ object Ex7 extends App {
 
     def update(k: K, v: V): Unit = {
       m.putIfAbsent(k, createPromise(v)) match {
-        case Some(p) => if (!p.isCompleted) p.trySuccess(v)
+        case Some(p) =>
+          try {
+            p.success(v)
+          } catch {
+            case e:IllegalStateException => throw new Exception("A specific key can be assigned only once")
+            case e => throw e
+          }
         case None =>
       }
     }
