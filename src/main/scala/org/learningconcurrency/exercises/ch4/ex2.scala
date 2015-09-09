@@ -28,8 +28,9 @@ object Ex2 extends App {
 
     val p = Promise[T]
 
-    def apply(): T = if (p.isCompleted) Await.result(p.future, Duration.Inf)
-    else throw new Exception("Not contain a value")
+    def apply(): T =
+      if (p.isCompleted) Await.result(p.future, Duration.Inf)
+      else throw new Exception("Not contain a value")
 
     def :=(x: T): Unit = if (!p.tryComplete(Try(x))) throw new Exception("Value is already assigned")
   }
@@ -41,7 +42,7 @@ object Ex2 extends App {
     try {
       v := s"v = ${Thread.currentThread().getName}"
     } catch {
-      case e => log(s"Error !!! ${e.getMessage}. Current value = ${v.apply}")
+      case e:Throwable => log(s"Error !!! ${e.getMessage}. Current value = ${v.apply}")
     }
   }
   )
