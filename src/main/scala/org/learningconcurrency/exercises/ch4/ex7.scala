@@ -37,13 +37,13 @@ object Ex7 extends App {
 
     private val m = new ConcurrentHashMap[K, Promise[V]]().asScala
 
-    def createPromise(v: V) = {
+    private def createPromise(v: V) = {
       val p = Promise[V]
       p.success(v)
       p
     }
 
-    def createEmptyPromise(k: K): Promise[V] = {
+    private def createEmptyPromise(k: K): Promise[V] = {
       val p = Promise[V]
       m.putIfAbsent(k, p) match {
         case Some(old) => old
