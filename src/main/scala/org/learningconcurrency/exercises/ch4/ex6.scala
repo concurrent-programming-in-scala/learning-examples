@@ -2,8 +2,9 @@ package org.learningconcurrency
 package exercises
 package ch4
 
-import scala.concurrent.ExecutionContext
-import scala.util.Try
+import scala.collection.immutable.IndexedSeq
+import scala.concurrent._
+import scala.util.{Failure, Success, Try}
 
 
 object Ex6 extends App {
@@ -23,27 +24,27 @@ object Ex6 extends App {
   import scala.sys.process._
 
   def spawn(command: String): Future[Int] = {
+
     val p = Promise[Int]
 
     Future {
-      p.complete(Try(command !))
+      blocking {
+        p.complete(Try(command !))
+      }
     }
 
     p.future
   }
 
 
-  val f = spawn("ls -r")
+    val f = for (i <- 1 to 100) yield spawn("ping -c 10 google.com")
 
-  f foreach {
-    case i => log(s"result = $i")
-  }
+    f.foreach((p) => p.onComplete{
+        case Success(i) => log(s"result = $i")
+        case Failure(e) => log(s"Error !!!! ${e.toString}")
+      }
+    )
 
-  f.failed foreach {
-    case e => log(s"Error !!!! ${e.toString}")
-  }
-
-
-  Thread.sleep(2000)
+  Thread.sleep(10000)
 
 }
