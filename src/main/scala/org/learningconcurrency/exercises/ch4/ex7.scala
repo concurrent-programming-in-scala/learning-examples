@@ -85,7 +85,7 @@ object Ex7 extends App {
   })
 
   (1 to 100).map((i) => thread {
-    val l = Await.result(m.apply(1), Duration.Inf)
+    val l = Await.result(m(1), Duration.Inf)
     log(l)
   })
 
