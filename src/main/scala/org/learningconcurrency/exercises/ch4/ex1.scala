@@ -27,6 +27,11 @@ object Ex1 extends App {
 
   private val timer = new Timer(true)
 
+  def stopTimer(t:Timer) = {
+    t.cancel()
+    t.purge()
+  }
+
   def timeout(p: Promise[String], t: Long): Unit = {
     timer.schedule(
       new TimerTask {
@@ -37,17 +42,26 @@ object Ex1 extends App {
     )
   }
 
+  def timeOutPrinter(t:Timer): Unit = {
+    t.schedule(
+      new TimerTask {
+        override def run(): Unit = print(".")
+      },0,50
+    )
+  }
+
   while (true) {
     println("---------------------------------------------")
     println("Please, input URL")
     val url = scala.io.StdIn.readLine
+
+    val dotPrinterTimer = new Timer(true)
 
     val p = Promise[String]
 
     val reader = Future {
       timeout(p, 2000)
       Source.fromURL(url).mkString
-
     } onComplete {
       case Success(s) => p.trySuccess(s)
       case Failure(e) => p.trySuccess(s"Error !!!! ${e.toString}")
@@ -55,17 +69,12 @@ object Ex1 extends App {
 
     val printer = Future {
       println(s"Reading from $url, please wait ")
-      while (!p.isCompleted) {
-
-        blocking {
-          Thread.sleep(50)
-        }
-
-        if (!p.isCompleted) print(".")
-      }
+      timeOutPrinter(dotPrinterTimer)
     }
 
     val l = Await.result(p.future, Duration.Inf)
+
+    stopTimer(dotPrinterTimer)
     println("")
     println(l)
 
