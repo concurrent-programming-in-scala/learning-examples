@@ -39,4 +39,6 @@ libraryDependencies += "org.scalaz" %% "scalaz-concurrent" % "7.0.6"
 
 libraryDependencies += "com.typesafe.akka" %% "akka-stream-experimental" % "0.4"
 
+libraryDependencies += "com.quantifind" %% "wisp" % "0.0.4"
+
 libraryDependencies += "com.storm-enroute" %% "reactive-collections" % "0.5"
