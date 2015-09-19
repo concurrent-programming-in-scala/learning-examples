@@ -41,4 +41,6 @@ libraryDependencies += "com.typesafe.akka" %% "akka-stream-experimental" % "0.4"
 
 libraryDependencies += "com.quantifind" %% "wisp" % "0.0.4"
 
+libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.0-R4"
+
 libraryDependencies += "com.storm-enroute" %% "reactive-collections" % "0.5"
