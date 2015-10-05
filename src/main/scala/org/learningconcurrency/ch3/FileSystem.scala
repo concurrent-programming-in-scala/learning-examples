@@ -29,6 +29,8 @@ object FileSystemTest extends App {
 
 class FileSystem(val root: String) {
 
+  private val messages = new LinkedBlockingQueue[String]
+
   val logger = new Thread {
     setDaemon(true)
     override def run() {
@@ -40,8 +42,6 @@ class FileSystem(val root: String) {
   }
 
   logger.start()
-
-  private val messages = new LinkedBlockingQueue[String]
 
   def logMessage(msg: String): Unit = messages.add(msg)
 
