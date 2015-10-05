@@ -20,10 +20,10 @@ object Ex5 extends App {
 
     def getWait():T = this.synchronized {
       while (empty)
-        this.wait
+        this.wait()
 
       empty = true
-      this.notify
+      this.notify()
       x
     }
 
