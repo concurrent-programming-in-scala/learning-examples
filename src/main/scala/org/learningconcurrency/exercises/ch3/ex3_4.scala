@@ -44,7 +44,7 @@ object Ex3_4 extends App {
           if (!r.compareAndSet(optNode, Some(Node(x)))) add(r, x)
         }
         case Some(Node(head, tail)) =>
-          if (ord.compare(x, head) > 0) {
+          if (ord.compare(x, head) <= 0) {
             //prepend new node
             val newNode = Node(x)
             newNode.tail.set(optNode)
