@@ -98,6 +98,7 @@ object Ex3_4 extends App {
   for (a <- csl.iterator) {
     log(a.toString)
     if (prev > a) throw new Exception(s"$prev > $a")
+    prev = a
     length += 1
   }
 
