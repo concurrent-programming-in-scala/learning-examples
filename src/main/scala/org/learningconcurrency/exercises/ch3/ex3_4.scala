@@ -44,7 +44,7 @@ object Ex3_4 extends App {
           if (!r.compareAndSet(optNode, Some(Node(x)))) add(r, x)
         }
         case Some(Node(head, tail)) =>
-          if (ord.compare(x, head) > 0) {
+          if (ord.compare(x, head) <= 0) {
             //prepend new node
             val newNode = Node(x)
             newNode.tail.set(optNode)
@@ -98,6 +98,7 @@ object Ex3_4 extends App {
   for (a <- csl.iterator) {
     log(a.toString)
     if (prev > a) throw new Exception(s"$prev > $a")
+    prev = a
     length += 1
   }
 
