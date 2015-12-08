@@ -41,6 +41,11 @@ libraryDependencies += "com.typesafe.akka" %% "akka-stream-experimental" % "0.4"
 
 libraryDependencies += "com.quantifind" %% "wisp" % "0.0.4"
 
-libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.0-R4"
+//libraryDependencies += "org.scalafx" %% "scalafx" % "8.0.0-R4"
+
+libraryDependencies += "org.scalafx" %% "scalafx" % "1.0.0-R8"
+
+//unmanagedJars in Compile += Attributed.blank(file(scala.util.Properties.javaHome) / "/lib/jfxrt.jar")
+unmanagedJars in Compile += Attributed.blank(file("/Library/Java/JavaVirtualMachines/jdk1.7.0_79.jdk/Contents/Home/jre") / "/lib/jfxrt.jar")
 
 libraryDependencies += "com.storm-enroute" %% "reactive-collections" % "0.5"
