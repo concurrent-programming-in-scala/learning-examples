@@ -20,7 +20,6 @@ import scala.sys.process._
 object Ex8 extends App {
 
   // This method's preconditions are the following:
-  //   - the `scala` command is added to the `PATH` variable.
   //   - In case of executing in sbt, set `fork` setting to `true` (set fork := true ).
   def spawn[T](block: => T): T = {
     val className = Ex8_EvaluationApp.getClass().getName().split((Pattern.quote("$")))(0)
@@ -34,7 +33,7 @@ object Ex8 extends App {
       out.close()
     }
 
-    val ret = Process(s"scala -cp ${System.getProperty("java.class.path")} $className ${tmp.getCanonicalPath}").!
+    val ret = Process(s"java -cp ${System.getProperty("java.class.path")} $className ${tmp.getCanonicalPath}").!
     if (ret != 0)
       throw new RuntimeException("fails to evaluate block in a new JVM process")
 
