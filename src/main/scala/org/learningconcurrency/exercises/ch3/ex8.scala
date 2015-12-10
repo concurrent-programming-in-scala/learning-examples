@@ -2,11 +2,12 @@ package org.learningconcurrency
 package exercises
 package ch3
 
-import java.net.ServerSocket
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.util.regex.Pattern
-import java.net.Socket
 
 import scala.sys.process._
 
@@ -22,22 +23,30 @@ object Ex8 extends App {
   //   - the `scala` command is added to the `PATH` variable.
   //   - In case of executing in sbt, set `fork` setting to `true` (set fork := true ).
   def spawn[T](block: => T): T = {
-    val className = Ex8_EvaluationServer.getClass().getName().split((Pattern.quote("$")))(0)
-    val lines = Process(s"scala -cp ${System.getProperty("java.class.path")} $className").lineStream
+    val className = Ex8_EvaluationApp.getClass().getName().split((Pattern.quote("$")))(0)
+    val tmp = File.createTempFile("concurrent-programming-in-scala", null)
+    tmp.deleteOnExit()
 
-    val port = lines.head.toInt // wait for outputting port
-
-    val socket = new Socket("127.0.0.1", port)
+    val out = new ObjectOutputStream(new FileOutputStream(tmp))
     try {
-      val out = new ObjectOutputStream(socket.getOutputStream())
-      out.writeObject(() => block) // wrap `block` not to be evaluated.
-      val in = new ObjectInputStream(socket.getInputStream())
+      out.writeObject(() => block)
+    } finally {
+      out.close()
+    }
+
+    val ret = Process(s"scala -cp ${System.getProperty("java.class.path")} $className ${tmp.getCanonicalPath}").!
+    if (ret != 0)
+      throw new RuntimeException("fails to evaluate block in a new JVM process")
+
+    val in = new ObjectInputStream(new FileInputStream(tmp))
+    try {
       in.readObject() match {
         case e: Throwable => throw e
         case x => x.asInstanceOf[T]
       }
     } finally {
-      socket.close()
+      in.close()
+      tmp.delete()
     }
   }
 
