@@ -21,6 +21,8 @@ object Ex8 extends App {
 
   // This method's preconditions are the following:
   //   - In case of executing in sbt, set `fork` setting to `true` (set fork := true ).
+  //
+  // If passed block which contains `System.exit`, this method throws `SecurityException`.
   def spawn[T](block: => T): T = {
     val className = Ex8_EvaluationApp.getClass().getName().split((Pattern.quote("$")))(0)
     val tmp = File.createTempFile("concurrent-programming-in-scala", null)
@@ -60,6 +62,15 @@ object Ex8 extends App {
     })
   } catch {
     case e: NumberFormatException =>
+    case _: Throwable => assert(false)
+  }
+
+  try {
+    spawn({
+      System.exit(0)
+    })
+  } catch {
+    case e: SecurityException =>
     case _: Throwable => assert(false)
   }
 }
