@@ -24,11 +24,14 @@ object Ex3 extends App {
 
   def randomQuoteMock = Observable.interval(1 seconds).map((l) => randomString(Random.nextInt(10)+1))
 
-  randomQuoteMock.scan((0D,0)){
-    (n,q) => n match {
-      case (s,c) => (s + q.length, c + 1)
+  randomQuoteMock.scan((0D,0)) {
+    (n, q) => n match {
+      case (s, c) => (s + q.length, c + 1)
     }
-  }.filter(_._2 != 0).map((e) => e._1/e._2).subscribe((e) => log(s"avg = $e"))
+  }
+    .tail
+    .map((e) => e._1 / e._2)
+    .subscribe((e) => log(s"avg = $e"))
 
   Thread.sleep(10000)
 
