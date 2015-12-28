@@ -3,11 +3,10 @@ package exercises
 package ch6
 
 import rx.lang.scala._
-import rx.lang.scala.Observable._
 
 import scala.annotation.tailrec
-import scala.io.Source
 import scala.util.Random
+import scala.concurrent.duration._
 
 /**
   * Use the randomQuote method from this section in order to create an Observable object
@@ -16,13 +15,11 @@ import scala.util.Random
   */
 object Ex3 extends App {
 
-  import scala.concurrent.duration._
 
   @tailrec
   def randomString(length: Int, l: List[Char] = List.empty[Char]):List[Char] = {
     if (length == 1) util.Random.nextPrintableChar :: l
     else randomString(length-1,util.Random.nextPrintableChar :: l)
-
   }
 
   def randomQuoteMock = Observable.interval(1 seconds).map((l) => randomString(Random.nextInt(10)+1))
