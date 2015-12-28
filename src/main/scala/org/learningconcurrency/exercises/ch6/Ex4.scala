@@ -21,57 +21,70 @@ package ch6
   Consider using Rx subjects for this task.
   */
 
-object Ex4 extends App {
+import rx.lang.scala._
 
-  import rx.lang.scala._
+object Ex4 extends App {
 
   implicit class ObserverableAdditional[T](val self:Observable[T]) extends AnyVal {
 
     def toSignal:Signal[T] = {
-      val s = new Signal[T]
-      self.last.subscribe(s.subject)
-      s
+      new Signal[T](self)
     }
 
   }
 
   class Signal[T] {
 
-    def this(t:T) {
-      this()
-      a = t
-    }
+    var lastEvent:T = _
 
-    var a:T = _
+    var observable: Observable[T] = _
 
     val subject = Subject[T]()
+    subject.subscribe(lastEvent = _)
 
-    subject.subscribe(a = _)
+    def this(observable: Observable[T]) = {
+      this()
 
-    def apply(): T = a
+      this.observable = observable.last
+      this.observable.subscribe(subject)
+    }
 
-    def map[S](f: T => S): Signal[S] = new Signal[S](f(a))
+    def apply(): T = lastEvent
 
-    def zip[S](that: Signal[S]): Signal[(T, S)] = new Signal[(T,S)]((a,that.a))
+    def  map[S](f: T => S): Signal[S] =
+      this.observable.map(f).toSignal
 
-    def scan[S](z: S)(f: (S, T) => S):Signal[S] = new Signal[S](f(z,a))
+    def zip[S](that: Signal[S]): Signal[(T, S)] =
+      this.observable.zip(that.observable).toSignal
+
+    def scan[S](z: S)(f: (S, T) => S):Signal[S] =
+      this.observable.scan(z)(f).toSignal
+
   }
 
   //test
-  val s1 = Observable.items[String]("A","B","C").toSignal
-  log(s"element = ${s1()}")
+  def test = {
 
-  val s2 = Observable.items[Int](1,2,3).toSignal
+    val o = Observable.from(List(1,2,3,4,5))
+    val o2 = Observable.from(List("A","B","C","D","E"))
 
-  val sMap = s1.map(_+"~")
-  log(s"sMap: element = ${sMap()}")
+    val s1 = o.toSignal
+    val s2 =o2.toSignal
 
-  val sZip = s1.zip(s2)
-  log(s"sZip: element = ${sZip()}")
+    log(s"s1: element = ${s1()}")
+    log(s"s2: element = ${s2()}")
 
-  val sScan = s2.scan(10)((s,t)=>s+t)
-  log(s"sScan: element = ${sScan()}")
+    val sMap = s1.map(_+"~")
+    log(s"sMap: element = ${sMap()}")
 
+    val sZip = s1.zip(s2)
+    log(s"sZip: element = ${sZip()}")
 
+    val sScan = s1.scan(2)((s,t)=>s*t)
+    log(s"sScan: element = ${sScan()}")
+  }
+
+  test
+  Thread.sleep(5000)
 
 }
