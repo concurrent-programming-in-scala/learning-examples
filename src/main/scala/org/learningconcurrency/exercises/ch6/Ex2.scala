@@ -2,24 +2,23 @@ package org.learningconcurrency
 package exercises
 package ch6
 
-import rx.lang.scala.Observable
-
 /**
   * Implement an Observable object that emits an event every 5 seconds and every 12 seconds,
   * but not if the elapsed time is a multiple of 30 seconds.
   * Use functional combinators on Observable objects.
   */
 
+import rx.lang.scala.Observable
 import scala.concurrent.duration._
 
 object Ex2A extends App {
 
-    val a = Observable.interval(5 seconds).map(_ * 5)
-    val b = Observable.interval(12 seconds).map(_ * 12)
+  val a = Observable.interval(5 seconds).map(_ * 5)
+  val b = Observable.interval(12 seconds).map(_ * 12)
 
-    val c = (a merge b distinct) filter (_ % 30 != 0)
+  val c = (a merge b distinct) filter (_ % 30 != 0)
 
-    c.subscribe((s) => log(s.toString))
+  c.subscribe((s) => log(s.toString))
 
   Thread.sleep(70000)
 }
