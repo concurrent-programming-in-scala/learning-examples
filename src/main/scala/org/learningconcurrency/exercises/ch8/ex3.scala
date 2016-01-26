@@ -2,8 +2,8 @@ package org.learningconcurrency
 package exercises
 package ch8
 
-import akka.actor.{Props, Actor, ActorSystem, ActorRef}
-import akka.actor.Actor.Receive
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.event.Logging
 import org.learningconcurrency.exercises.ch8.Ex3.SessionActor.{EndSession, StartSession}
 
 /**
@@ -19,19 +19,22 @@ import org.learningconcurrency.exercises.ch8.Ex3.SessionActor.{EndSession, Start
 object Ex3 extends App {
 
   class SessionActor(password: String, r: ActorRef) extends Actor {
+
+    val log = Logging(context.system, this)
+
     override def receive: Receive = waitStart
 
     def waitStart:Receive = {
       case StartSession(p) if (p == password) =>
         context.become(receiveMessage)
-        log("start session")
-      case m => log(s"Can't forward $m. Waiting start session ...")
+        log.info("start session")
+      case m => log.info(s"Can't forward $m. Waiting start session ...")
     }
 
     def receiveMessage: Receive = {
       case EndSession =>
         context.become(waitStart)
-        log("end session")
+        log.info("end session")
       case m => r forward m
     }
   }
@@ -46,11 +49,13 @@ object Ex3 extends App {
 
 
   //test
-
   class TestActor extends Actor {
+    val log = Logging(context.system, this)
+
     override def receive: Actor.Receive = {
-      case m => log(m.toString)
+      case m => log.info(m.toString)
     }
+
   }
 
   object TestActor {
