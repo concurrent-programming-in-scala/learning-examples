@@ -3,77 +3,95 @@ package exercises
 package ch8
 
 import akka.actor._
-import akka.pattern._
-
-import scala.concurrent.duration._
-import scala.util.{Failure, Success}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-
+import akka.event.Logging
 /**
- * Recall the bank account example from Chapter 2, Concurrency on the JVM and the Java Memory Model.
- * Implement different bank accounts as separate actors,
- * represented with the AccountActor class.
- * When an AccountActor class receives a Send message,
- * it must transfer the specified amount of money to the target actor.
- *
- * What will happen if either of the actors receives a Kill message
- * at any point during the money transaction?
- */
+  * Recall the bank account example from Chapter 2, Concurrency on the JVM and the Java Memory Model.
+  * Implement different bank accounts as separate actors,
+  * represented with the AccountActor class.
+  * When an AccountActor class receives a Send message,
+  * it must transfer the specified amount of money to the target actor.
+  *
+  * What will happen if either of the actors receives a Kill message
+  * at any point during the money transaction?
+  */
 object Ex2 extends App {
 
-  import org.learningconcurrency.exercises.ch8.Ex2.AccountActor._
-
   class AccountActor(name: String, var money: Int) extends Actor {
+
+    val log = Logging(context.system, this)
+
     override def receive: Receive = {
-      case Send(amount, target) =>
-        if (money >= amount) {
-          log(s"send $amount")
-          (target ? Add(amount))(5 seconds) onComplete {
-            case Success(v) => money -= amount
-              log(s"Success: Add $amount to $target ($v).")
-            case Failure(e) => log(s"Error: Add $amount to $target ($e).")
-          }
-        } else {
-          log(s"Insufficient funds. ($money < $amount)")
-        }
-      case Add(amount) => log(s"ADD $amount")
+      case AccountActor.PlusMoney(amount) =>
         money += amount
-        sender() ! "Ok"
-      case Print => log(s"$name: $money")
+        sender ! AccountActor.Ok
+      case AccountActor.MinusMoney(amount) if money >= amount =>
+        money -= amount
+        sender ! AccountActor.Ok
+      case AccountActor.MinusMoney(amount) =>
+        log.error(s"Insufficient funds. ($money < $amount)")
+        sender ! AccountActor.Error
+      case AccountActor.Print => log.info(s"$name: $money")
     }
   }
 
   object AccountActor {
+    case class PlusMoney(amount: Int)
+    case class MinusMoney(amount: Int)
 
-    case class Send(amount: Int, target: ActorRef)
-
-    case class Add(amount: Int)
+    case object Ok
+    case object Error
 
     case object Print
 
     def props(name: String, money: Int) = Props(classOf[AccountActor], name, money)
   }
 
+  class TransactionActor extends Actor {
+
+    val log = Logging(context.system, this)
+
+    def checkTransferTo: Receive = {
+      case AccountActor.Ok => log.info("Transfer complete")
+      case AccountActor.Error =>
+        log.info("Transfer error (to)")
+        context.stop(self)
+    }
+
+    def checkTransferFrom(accountTo: ActorRef, amount: Int): Receive = {
+      case AccountActor.Ok =>
+        accountTo ! AccountActor.PlusMoney(amount)
+        context.become(checkTransferTo)
+      case AccountActor.Error =>
+        log.error("Transfer error (from)")
+        context.stop(self)
+    }
+
+    override def receive: Actor.Receive = {
+      case TransactionActor.StartTransaction(accountFrom, accountTo, amount) =>
+        accountFrom ! AccountActor.MinusMoney(amount)
+        context.become(checkTransferFrom(accountTo, amount))
+    }
+  }
+
+  object TransactionActor {
+    case class StartTransaction(accountFrom: ActorRef, accountTo: ActorRef, amount: Int)
+  }
 
   //test
-
   val system = ActorSystem("AccountSystem")
 
-
-  import org.learningconcurrency.exercises.ch8.Ex2.AccountActor._
-
   val first = system.actorOf(AccountActor.props("Account A", 10), "account_A")
-  val second = system.actorOf(AccountActor.props("Account B" ,0), "account_B")
+  val second = system.actorOf(AccountActor.props("Account B", 0), "account_B")
 
-  first ! Send(100, second)
+  val transaction = system.actorOf(Props[TransactionActor], "transfer")
+  transaction ! TransactionActor.StartTransaction(accountFrom = first, accountTo = second, amount = 7)
 
-  Thread.sleep(5000)
+  Thread.sleep(1000)
 
-  first ! Print
-  second ! Print
+  first ! AccountActor.Print
+  second ! AccountActor.Print
 
-  Thread.sleep(5000)
+  Thread.sleep(2000)
 
   system.shutdown()
 
