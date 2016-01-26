@@ -3,6 +3,7 @@ package exercises
 package ch8
 
 import akka.actor._
+import akka.event.Logging
 import akka.pattern._
 
 import scala.concurrent.ExecutionContext
@@ -19,51 +20,49 @@ import scala.util.{Failure, Success}
  */
 object Ex4 extends App {
 
-  import org.learningconcurrency.exercises.ch8.Ex4.ExecutorActor.Execute
+  class ExecutorActor extends Actor with ExecutionContext {
 
-  class ActorExecutionContext extends ExecutionContext {
+    val log = Logging(context.system, this)
 
-    val system = ActorSystem("MyActorSystem")
-    val actor = system.actorOf(Props[ExecutorActor], "executorActor")
-
-    override def execute(runnable: Runnable): Unit = {
-      (actor ? Execute(runnable))(5 seconds).mapTo[Try[Unit]] onComplete {
-        case Success(r) => log(s"result OK")
-        case Failure(e) => reportFailure(e)
-      }
+    override def receive: Receive = {
+      case ExecutorActor.Execute(runnable) =>
+        Try(runnable.run()) match {
+          case Success(_) => log.info("result OK")
+          case Failure(e) => reportFailure(e)
+        }
     }
+
+    override def execute(runnable: Runnable): Unit = self ! ExecutorActor.Execute(runnable)
 
     override def reportFailure(cause: Throwable): Unit = {
-      log(s"error: ${cause.getMessage}")
+      log.error(s"error: ${cause.getMessage}")
     }
 
-  }
-
-  class ExecutorActor extends Actor {
-    override def receive: Receive = {
-      case Execute(runnable) => sender ! Try(runnable.run())
-    }
   }
 
   object ExecutorActor {
     case class Execute(runnable: Runnable)
   }
 
-  val e = new ActorExecutionContext
+  val system = ActorSystem("MyActorSystem")
+  val executeActor = system.actorOf(Props[ExecutorActor], "executorActor")
 
-  e.execute(new Runnable {
+  executeActor ! ExecutorActor.Execute(new Runnable {
     override def run(): Unit = {
       log("run (exception)")
       throw new Exception("test exception")
     }
   })
 
-  e.execute(new Runnable {
+  executeActor ! ExecutorActor.Execute(new Runnable {
     override def run(): Unit = {
       log("run")
     }
   })
 
+  Thread.sleep(2000)
+
+  system.shutdown()
 
 
 }
