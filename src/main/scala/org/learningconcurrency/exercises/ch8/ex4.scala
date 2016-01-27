@@ -20,41 +20,48 @@ import scala.util.{Failure, Success}
  */
 object Ex4 extends App {
 
-  class ExecutorActor extends Actor with ExecutionContext {
+  class ActorExecutionContext extends ExecutionContext {
 
-    val log = Logging(context.system, this)
 
-    override def receive: Receive = {
-      case ExecutorActor.Execute(runnable) =>
-        Try(runnable.run()) match {
-          case Success(_) => log.info("result OK")
-          case Failure(e) => reportFailure(e)
-        }
+    class ExecutorActor extends Actor() {
+
+      val actorLog = Logging(context.system, this)
+
+      override def receive: Receive = {
+        case ExecutorActor.Execute(runnable) =>
+          Try(runnable.run()) match {
+            case Success(_) => actorLog.info("result OK")
+            case Failure(e) => reportFailure(e)
+          }
+      }
     }
 
-    override def execute(runnable: Runnable): Unit = self ! ExecutorActor.Execute(runnable)
-
-    override def reportFailure(cause: Throwable): Unit = {
-      log.error(s"error: ${cause.getMessage}")
+    object ExecutorActor {
+      case class Execute(runnable: Runnable)
+      def props = Props(new ExecutorActor)
     }
 
+    val system = ActorSystem("MyActorSystem")
+    val executeActor = system.actorOf(ExecutorActor.props)
+
+    override def execute(runnable: Runnable): Unit = executeActor ! ExecutorActor.Execute(runnable)
+
+    override def reportFailure(cause: Throwable): Unit = log(s"error: ${cause.getMessage}")
+
+    def shutdown() = system.shutdown()
   }
 
-  object ExecutorActor {
-    case class Execute(runnable: Runnable)
-  }
 
-  val system = ActorSystem("MyActorSystem")
-  val executeActor = system.actorOf(Props[ExecutorActor], "executorActor")
+  val executionContext = new ActorExecutionContext()
 
-  executeActor ! ExecutorActor.Execute(new Runnable {
+  executionContext.execute(new Runnable {
     override def run(): Unit = {
       log("run (exception)")
       throw new Exception("test exception")
     }
   })
 
-  executeActor ! ExecutorActor.Execute(new Runnable {
+  executionContext.execute(new Runnable {
     override def run(): Unit = {
       log("run")
     }
@@ -62,7 +69,7 @@ object Ex4 extends App {
 
   Thread.sleep(2000)
 
-  system.shutdown()
+  executionContext.shutdown()
 
 
 }
