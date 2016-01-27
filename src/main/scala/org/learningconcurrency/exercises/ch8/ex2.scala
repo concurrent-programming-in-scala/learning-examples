@@ -16,6 +16,11 @@ import akka.event.Logging
   */
 object Ex2 extends App {
 
+  /**
+    * If the actor receives a Kill message at any point during the transaction,
+    * The actor will restart and it will lost his state (amount)
+    * This problem can't be solved easily in the general case.
+   */
   class AccountActor(name: String, var money: Int) extends Actor {
 
     val log = Logging(context.system, this)
