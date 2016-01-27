@@ -52,9 +52,6 @@ object Ex2 extends App {
 
     def checkTransferTo: Receive = {
       case AccountActor.Ok => log.info("Transfer complete")
-      case AccountActor.Error =>
-        log.info("Transfer error (to)")
-        context.stop(self)
     }
 
     def checkTransferFrom(accountTo: ActorRef, amount: Int): Receive = {
