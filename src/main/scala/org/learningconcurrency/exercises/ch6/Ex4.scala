@@ -34,57 +34,80 @@ object Ex4 extends App {
   }
 
   class Signal[T] {
+    protected var lastEvent: Option[T] = None
+    protected var observable: Observable[T] = _
 
-    var lastEvent:T = _
-
-    var observable: Observable[T] = _
-
-    val subject = Subject[T]()
-    subject.subscribe(lastEvent = _)
-
-    def this(observable: Observable[T]) = {
+    def this(observable: Observable[T]) {
       this()
-
-      this.observable = observable.last
-      this.observable.subscribe(subject)
+      setObservable(observable)
     }
 
-    def apply(): T = lastEvent
+    def this(observable: Observable[T], initial: T) {
+      this(observable)
+      lastEvent = Option(initial)
+    }
 
-    def  map[S](f: T => S): Signal[S] =
-      this.observable.map(f).toSignal
+    protected def setObservable(observable: Observable[T]): Unit = {
+      this.observable = observable
+      this.observable.subscribe(t => { lastEvent = Option(t) })
+    }
 
-    def zip[S](that: Signal[S]): Signal[(T, S)] =
-      this.observable.zip(that.observable).toSignal
+    /* This method throws `NoSuchElementException` when any of events are not emitted. */
+    def apply(): T = lastEvent.get
 
-    def scan[S](z: S)(f: (S, T) => S):Signal[S] =
-      this.observable.scan(z)(f).toSignal
+    def map[S](f: T => S): Signal[S] = lastEvent match {
+      case Some(t) => new Signal(observable.map(f), f(t))
+      case _ => new Signal(observable.map(f))
+    }
 
+    def zip[S](that: Signal[S]): Signal[(T, S)] = (lastEvent, that.lastEvent) match {
+      case (Some(t), Some(s)) => new Signal(observable.zip(that.observable), (t, s))
+      case (_, _) => new Signal(observable.zip(that.observable))
+    }
+
+    def scan[S](z: S)(f: (S, T) => S): Signal[S] = lastEvent match {
+      case Some(t) => {
+        val s = f(z, t)
+        new Signal(observable.scan(s)(f), s)
+      }
+      case _ => new Signal(observable.scan(z)(f))
+    }
   }
 
-  //test
-  def test = {
+  val sub1 = Subject[Int]()
+  val sig1 = sub1.toSignal
+  sub1.onNext(1)
+  assert(sig1() == 1)
+  sub1.onNext(2)
+  assert(sig1() == 2)
 
-    val o = Observable.from(List(1,2,3,4,5))
-    val o2 = Observable.from(List("A","B","C","D","E"))
+  val sub2 = Subject[Int]()
+  val sig2 = sub2.toSignal
+  sub2.onNext(1)
+  val increment = sig2.map(_ + 1)
+  assert(increment() == 2)
+  sub2.onNext(2)
+  assert(increment() == 3)
 
-    val s1 = o.toSignal
-    val s2 =o2.toSignal
+  val sub31 = Subject[Int]()
+  val sub32 = Subject[String]()
+  val sig31 = sub31.toSignal
+  val sig32 = sub32.toSignal
+  sub31.onNext(1)
+  sub32.onNext("a")
+  val zipped = sig31.zip(sig32)
+  assert(zipped() == (1, "a"))
+  sub31.onNext(2)
+  sub32.onNext("b")
+  assert(zipped() == (2, "b"))
 
-    log(s"s1: element = ${s1()}")
-    log(s"s2: element = ${s2()}")
-
-    val sMap = s1.map(_+"~")
-    log(s"sMap: element = ${sMap()}")
-
-    val sZip = s1.zip(s2)
-    log(s"sZip: element = ${sZip()}")
-
-    val sScan = s1.scan(2)((s,t)=>s*t)
-    log(s"sScan: element = ${sScan()}")
-  }
-
-  test
-  Thread.sleep(5000)
+  val sub4 = Subject[Int]()
+  val sig4 = sub4.toSignal
+  sub4.onNext(1)
+  val sum = sig4.scan(0)(_ + _)
+  sub4.onNext(2)
+  assert(sum() == 3)
+  sub4.onNext(3)
+  assert(sum() == 6)
 
 }
