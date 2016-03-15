@@ -65,13 +65,8 @@ object Ex4 extends App {
       case (_, _) => new Signal(observable.zip(that.observable))
     }
 
-    def scan[S](z: S)(f: (S, T) => S): Signal[S] = lastEvent match {
-      case Some(t) => {
-        val s = f(z, t)
-        new Signal(observable.scan(s)(f), s)
-      }
-      case _ => new Signal(observable.scan(z)(f))
-    }
+    def scan[S](z: S)(f: (S, T) => S): Signal[S] =
+      new Signal(observable.scan(z)(f))
   }
 
   val sub1 = Subject[Int]()
@@ -104,10 +99,11 @@ object Ex4 extends App {
   val sub4 = Subject[Int]()
   val sig4 = sub4.toSignal
   sub4.onNext(1)
-  val sum = sig4.scan(0)(_ + _)
+  val sum = sig4.scan(10)(_ + _)
+  assert(sum() == 10)
   sub4.onNext(2)
-  assert(sum() == 3)
+  assert(sum() == 12)
   sub4.onNext(3)
-  assert(sum() == 6)
+  assert(sum() == 15)
 
 }
