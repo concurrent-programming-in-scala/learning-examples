@@ -1,4 +1,6 @@
-package org.learningconcurrency.exercises.ch7
+package org.learningconcurrency
+package exercises
+package ch7
 
 /**
   * Implement a transactional First In First Out (FIFO) queue,
