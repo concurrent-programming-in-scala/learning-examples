@@ -38,9 +38,9 @@ object Ex1 extends App {
     def second_=(x: Q)(implicit txn: InTxn) = rSecond.single.transform(old => x)
 
     def swap()(implicit e: P =:= Q, txn: InTxn): Unit = {
-      val old = Ref[P](first)
+      val old = first
       first = second.asInstanceOf[P]
-      second = old.single()
+      second = e(old)
     }
   }
 
