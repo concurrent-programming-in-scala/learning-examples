@@ -54,7 +54,7 @@ object Ex1 extends App {
     val vS = p.second
 
     Txn.afterCommit { _ =>
-      if (vS == vF) log("ERROR !!!!")
+      assert(vS != vF)
     }
   }
 
