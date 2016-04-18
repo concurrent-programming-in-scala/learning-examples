@@ -8,75 +8,55 @@ package ch7
 object Ex6 extends App {
   import scala.concurrent.stm._
 
+  /**
+   * `Vector` based implementation.
+   */
   class TVectorBuffer[T] extends scala.collection.mutable.Buffer[T] {
-    private[this] val buf: Ref[Vector[T]] = Ref(Vector.empty[T]) // should store the immutable object in order to use CAS operations.
+    private[this] val buf: Ref[Vector[T]] = Ref(Vector.empty[T])
 
-    @annotation.tailrec
-    final def +=(elem: T): this.type = {
-      val ts = buf.single()
-      if (buf.single.compareAndSet(ts, ts :+ elem))
-        this
-      else
-        +=(elem)
+    def +=(elem: T): this.type = atomic { implicit txn =>
+      buf() = buf() :+ elem
+      this
     }
 
-    @annotation.tailrec
-    final def +=:(elem: T): this.type = {
-      val ts = buf.single()
-      if (buf.single.compareAndSet(ts, elem +: ts))
-        this
-      else
-        +=:(elem)
+    def +=:(elem: T): this.type = atomic { implicit txn =>
+      buf() = elem +: buf()
+      this
     }
 
     def apply(n: Int): T = buf.single()(n)
 
-    @annotation.tailrec
-    final def clear(): Unit = {
-      val ts = buf.single()
-      if (!buf.single.compareAndSet(ts, Vector.empty[T]))
-        clear()
-    }
+    def clear(): Unit = buf.single.set(Vector.empty[T])
 
-    @annotation.tailrec
-    final def insertAll(n: Int, elems: collection.Traversable[T]): Unit = {
-      val ts = buf.single()
+    def insertAll(n: Int, elems: collection.Traversable[T]): Unit = atomic { implicit txn =>
+      val ts = buf()
       val len = ts.length
       if (n < 0 || n > len) throw new IndexOutOfBoundsException(n.toString)
 
       val left = ts.take(n)
       val right = ts.drop(n)
-      val nts = left ++ elems ++ right
-      if (!buf.single.compareAndSet(ts, nts))
-        insertAll(n, elems)
+      buf() = left ++ elems ++ right
     }
 
     def length: Int = buf.single().length
 
-    @annotation.tailrec
-    final def remove(n: Int): T = {
-      val ts = buf.single()
+    def remove(n: Int): T = atomic { implicit txn =>
+      val ts = buf()
       val len = ts.length
       if (n < 0 || n >= len) throw new IndexOutOfBoundsException(n.toString)
 
       val left = ts.take(n)
       val right = ts.drop(n + 1)
-      val nts = left ++ right
-      if (buf.single.compareAndSet(ts, nts))
-        ts(n)
-      else
-        remove(n)
+      buf() = left ++ right
+      ts(n)
     }
 
-    @annotation.tailrec
-    final def update(n: Int, newelem: T): Unit = {
-      val ts = buf.single()
+    def update(n: Int, newelem: T): Unit = atomic { implicit txn =>
+      val ts = buf()
       val len = ts.length
       if (n < 0 || n >= len) throw new IndexOutOfBoundsException(n.toString)
 
-      val nts = ts.updated(n, newelem)
-      if (!buf.single.compareAndSet(ts, nts))
-        update(n, newelem)
+      buf() = ts.updated(n, newelem)
     }
 
     def iterator: Iterator[T] = buf.single().iterator
