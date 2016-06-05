@@ -7,4 +7,3 @@ script: sbt "++ ${TRAVIS_SCALA_VERSION} ; test"
 branches:
   only:
     - master
-
