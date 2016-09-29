@@ -30,7 +30,7 @@ object LockFreePool {
       retry()
     }
 
-    def get(): Option[T] = {
+    def remove(): Option[T] = {
       val start = (Thread.currentThread.getId % buckets.length).toInt
       @tailrec def scan(witness: Long): Option[T] = {
         var i = (start + 1) % buckets.length
@@ -74,7 +74,7 @@ object LockFreePool {
     inserters.foreach(_.join())
     val removers = for (i <- 0 until p) yield ch2.thread {
       for (j <- 0 until num) {
-        pool.get() match {
+        pool.remove() match {
           case Some(v) => check.put(v, ())
           case None => sys.error("Should be non-empty.")
         }
