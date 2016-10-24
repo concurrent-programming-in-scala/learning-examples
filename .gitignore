@@ -2,6 +2,9 @@
 *.iml
 .idea
 
+# ensime
+.ensime
+
 # sbt output
 target
 SCALA-README.md
