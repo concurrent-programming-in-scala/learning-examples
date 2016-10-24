@@ -4,6 +4,7 @@
 
 # ensime
 .ensime
+.ensime_cache
 
 # sbt output
 target
