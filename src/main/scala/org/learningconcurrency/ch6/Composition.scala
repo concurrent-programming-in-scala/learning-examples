@@ -28,7 +28,7 @@ object CompositionConcatAndFlatten extends App {
 
   def fetchQuote(): Future[String] = Future {
     blocking {
-      val url = "http://www.iheartquotes.com/api/v1/random?show_permalink=false&show_source=false"
+      val url = "http://quotes.stormconsultancy.co.uk/random.json"
       Source.fromURL(url).getLines.mkString
     }
   }
