@@ -102,7 +102,7 @@ object Ex3 extends App {
       } yield {
         Future {
           (segment, for {
-            y0 <- ((segment - 1) * segmentHeight) until (segment * segmentHeight)
+            y0 <- ((segment - 1) * segmentHeight) to (segment * segmentHeight)
           } yield {
             for {
               x0 <- 0 until imageWidth
