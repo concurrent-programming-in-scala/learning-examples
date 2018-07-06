@@ -12,6 +12,8 @@ object ExecutorsCreate extends App {
   executor.execute(new Runnable {
     def run() = log("This task is run asynchronously.")
   })
+
+  Thread.sleep(500)
 }
 
 
