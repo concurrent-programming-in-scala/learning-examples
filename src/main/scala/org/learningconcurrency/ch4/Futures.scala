@@ -79,6 +79,7 @@ object FuturesFailure extends App {
   urlSpec.failed foreach {
     case t => log(s"exception occurred - $t")
   }
+  Thread.sleep(2000)
 }
 
 
