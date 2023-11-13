@@ -33,9 +33,9 @@ object LockFreePool {
     def remove(): Option[T] = {
       val start = (Thread.currentThread.getId % buckets.length).toInt
       @tailrec def scan(witness: Long): Option[T] = {
-        var i = (start + 1) % buckets.length
+        var i = start
         var sum = 0L
-        while (i != start) {
+        do {
           val bucket = buckets(i)
 
           @tailrec def retry(): Option[T] = {
@@ -55,7 +55,7 @@ object LockFreePool {
           }
 
           i = (i + 1) % buckets.length
-        }
+        } while (i != start)
         if (sum == witness) None
         else scan(sum)
       }
